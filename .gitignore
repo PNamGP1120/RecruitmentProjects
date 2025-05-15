@@ -176,6 +176,8 @@ cython_debug/
 .idea/
 
 */migrations/
+DjangoAPI/RecruitmentApp/migrations/
+
 
 
 
