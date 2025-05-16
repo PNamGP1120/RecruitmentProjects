@@ -8,7 +8,7 @@ from .views import (
 urlpatterns = [
     path('auth/register/', RegisterView.as_view(), name='register'),
     path('auth/user/', UserUpdateView.as_view(), name='user-update'),
-    path('auth/register/jobseeker/', JobSeekerRegisterView.as_view(), name='register-job-seeker'),
+    path('auth/register/job-seeker/', JobSeekerRegisterView.as_view(), name='register-job-seeker'),
     path('auth/register/recruiter/', RecruiterRegisterView.as_view(), name='register-recruiter'),
     path('admin/user-roles/approve/', AdminApproveRecruiterView.as_view(), name='admin-approve-recruiter'),
     path('admin/user-roles/assign-admin/', AdminAssignAdminRoleView.as_view(), name='admin-assign-admin'),
