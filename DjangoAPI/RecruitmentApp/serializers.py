@@ -12,7 +12,8 @@ class RegisterSerializer(serializers.ModelSerializer):
         fields = ['username', 'email', 'password', 'password2']
         extra_kwargs = {'password': {'write_only': True}}
 
-    def validate(self, data):
+    @staticmethod
+    def validate(data):
         if data['password'] != data['password2']:
             raise serializers.ValidationError("Mật khẩu không khớp.")
         return data
@@ -28,9 +29,10 @@ class UserUpdateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['username', 'email', 'avatar', 'avatar_url']
+        fields = ['username', 'first_name', 'last_name', 'email', 'avatar', 'avatar_url']
 
-    def get_avatar_url(self, obj):
+    @staticmethod
+    def get_avatar_url(obj):
         if obj.avatar:
             return obj.avatar.url
         return None
@@ -47,7 +49,7 @@ class JobSeekerRegisterSerializer(serializers.ModelSerializer):
 class RecruiterRegisterSerializer(serializers.ModelSerializer):
     class Meta:
         model = RecruiterProfile
-        fields = ['company_name', 'company_website', 'address', 'industry', 'company_description']
+        fields = ['company_name', 'company_website', 'address', 'industry', 'company_description', 'company_logo']
 
 
 class RoleSerializer(serializers.ModelSerializer):

@@ -31,7 +31,8 @@ class UserUpdateView(generics.RetrieveUpdateAPIView):
 class JobSeekerRegisterView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
-    def post(self, request):
+    @staticmethod
+    def post(request):
         serializer = JobSeekerRegisterSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -184,7 +185,8 @@ class RoleListView(generics.ListAPIView):
 class SwitchRoleView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
-    def post(self, request):
+    @staticmethod
+    def post(request):
         serializer = SwitchRoleSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
