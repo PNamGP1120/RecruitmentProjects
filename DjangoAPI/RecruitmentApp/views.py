@@ -5,6 +5,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.contrib.auth import get_user_model
 from .models import Role, UserRole, JobSeekerProfile, RecruiterProfile
+from .permissions import IsAdmin
 from .serializers import (
     RegisterSerializer, UserUpdateSerializer, JobSeekerRegisterSerializer,
     RecruiterRegisterSerializer, RoleSerializer, UserRoleApproveSerializer,
@@ -89,7 +90,7 @@ class RecruiterRegisterView(APIView):
 
 
 class AdminApproveRecruiterView(APIView):
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAdmin]
 
     def post(self, request):
         serializer = UserRoleApproveSerializer(data=request.data)
