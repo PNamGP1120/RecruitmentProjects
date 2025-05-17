@@ -86,7 +86,7 @@ class Skill(models.Model):
 
 class JobSeekerProfile(BaseModel):
     my_user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, primary_key=True,
-                                related_name='ntv_profile')
+                                related_name='job_seeker_profile')
     summary = models.TextField(blank=True, null=True)
     experience = models.TextField(blank=True, null=True)
     education = models.TextField(blank=True, null=True)
@@ -107,7 +107,7 @@ class JobSeekerProfile(BaseModel):
 
 class RecruiterProfile(BaseModel):
     my_user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, primary_key=True,
-                                related_name='ntd_profile')
+                                related_name='recruiter_profile')
     company_name = models.CharField(max_length=255)
     company_website = models.URLField(blank=True, null=True)
     company_description = models.TextField(blank=True, null=True)

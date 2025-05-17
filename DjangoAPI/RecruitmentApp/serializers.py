@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from .models import Role, UserRole, JobSeekerProfile, RecruiterProfile, Skill
+from .models import Role, UserRole, JobSeekerProfile, RecruiterProfile, Skill, CV
 
 User = get_user_model()
 
@@ -65,3 +65,77 @@ class UserRoleApproveSerializer(serializers.Serializer):
 
 class SwitchRoleSerializer(serializers.Serializer):
     role_name = serializers.CharField()
+
+class JobSeekerProfileSerializer(serializers.ModelSerializer):
+    skills = serializers.SlugRelatedField(
+        many=True,
+        read_only=True,
+        slug_field='name'
+    )
+
+    class Meta:
+        model = JobSeekerProfile
+        fields = ['summary','experience','education',
+                  'phone_number','date_of_birth','gender','skills']
+
+class RecruiterProfileSerializer(serializers.ModelSerializer):
+    company_logo_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = RecruiterProfile
+        fields = ['company_name', 'company_website',
+                  'address', 'industry', 'company_description', 'company_logo_url']
+
+    @staticmethod
+    def get_company_logo_url(obj):
+        if obj.company_logo:
+            return obj.company_logo.url
+        return None
+
+class CVSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CV
+        fields = ['file_name', 'file_path', 'version_name', 'is_default']
+
+    def _clear_existing_default(job_seeker_profile):
+        """
+        Gỡ các CV hiện tại đang đặt mặc định.
+        """
+        CV.objects.filter(job_seeker_profile=job_seeker_profile, is_default=True).update(is_default=False)
+
+    def validate(self, data):
+        """
+        Nếu đang đặt CV này là mặc định, đảm bảo không có CV mặc định khác trừ chính nó.
+        """
+        is_default = data.get('is_default', False)
+        request = self.context.get('request')
+        job_seeker_profile = getattr(request.user, 'job_seeker_profile', None)
+
+        if is_default and job_seeker_profile:
+            existing_default = CV.objects.filter(
+                job_seeker_profile=job_seeker_profile,
+                is_default=True
+            )
+            if self.instance:
+                existing_default = existing_default.exclude(id=self.instance.id)
+
+            if existing_default.exists():
+                raise serializers.ValidationError("Chỉ được phép có một CV mặc định.")
+        return data
+
+    def create(self, validated_data):
+        job_seeker_profile = self.context['request'].user.job_seeker_profile
+        if validated_data.get('is_default', False):
+            self._clear_existing_default(job_seeker_profile)
+        validated_data['job_seeker_profile'] = job_seeker_profile
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        if validated_data.get('is_default', False):
+            self._clear_existing_default(instance.job_seeker_profile)
+        return super().update(instance, validated_data)
+
+    def to_representation(self, instance):
+        rep = super().to_representation(instance)
+        rep['file_path'] = instance.file_path.url if instance.file_path else None
+        return rep

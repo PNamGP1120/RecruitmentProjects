@@ -1,14 +1,16 @@
+from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from rest_framework import generics, permissions, status
-from rest_framework.permissions import IsAdminUser
+from rest_framework import generics, status
+from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.contrib.auth import get_user_model
-from .models import Role, UserRole, JobSeekerProfile, RecruiterProfile
+from .models import Role, UserRole, JobSeekerProfile, RecruiterProfile, CV
+from .permissions import IsAuthenticated, AllowAnyUser, IsAdmin
 from .serializers import (
     RegisterSerializer, UserUpdateSerializer, JobSeekerRegisterSerializer,
     RecruiterRegisterSerializer, RoleSerializer, UserRoleApproveSerializer,
-    SwitchRoleSerializer
+    SwitchRoleSerializer, JobSeekerProfileSerializer, RecruiterProfileSerializer, CVSerializer
 )
 from rest_framework_simplejwt.views import TokenObtainPairView
 
@@ -16,20 +18,20 @@ User = get_user_model()
 
 
 class RegisterView(generics.CreateAPIView):
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [AllowAnyUser]
     serializer_class = RegisterSerializer
 
 
 class UserUpdateView(generics.RetrieveUpdateAPIView):
     serializer_class = UserUpdateSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def get_object(self):
         return self.request.user
 
 
 class JobSeekerRegisterView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     @staticmethod
     def post(request):
@@ -64,7 +66,7 @@ class JobSeekerRegisterView(APIView):
 
 
 class RecruiterRegisterView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def post(self, request):
         serializer = RecruiterRegisterSerializer(data=request.data)
@@ -89,7 +91,7 @@ class RecruiterRegisterView(APIView):
 
 
 class AdminApproveRecruiterView(APIView):
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAdmin]
 
     def post(self, request):
         serializer = UserRoleApproveSerializer(data=request.data)
@@ -139,7 +141,7 @@ class AdminApproveRecruiterView(APIView):
         })
 
 class AdminAssignAdminRoleView(APIView):
-    permission_classes = [permissions.IsAdminUser]
+    permission_classes = [IsAdmin]
 
     def post(self, request):
         user_id = request.data.get('user_id')
@@ -165,12 +167,12 @@ class AdminAssignAdminRoleView(APIView):
 
 
 class LoginView(TokenObtainPairView):
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [AllowAnyUser]
 
 
 class CurrentUserView(generics.RetrieveAPIView):
     serializer_class = UserUpdateSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def get_object(self):
         return self.request.user
@@ -179,11 +181,11 @@ class CurrentUserView(generics.RetrieveAPIView):
 class RoleListView(generics.ListAPIView):
     queryset = Role.objects.all()
     serializer_class = RoleSerializer
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [AllowAnyUser]
 
 
 class SwitchRoleView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     @staticmethod
     def post(request):
@@ -202,3 +204,41 @@ class SwitchRoleView(APIView):
 
         except (Role.DoesNotExist, UserRole.DoesNotExist):
             return Response({"error": "Vai trò không hợp lệ hoặc chưa được phê duyệt"}, status=400)
+
+class JobSeekerProfileView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        profile = get_object_or_404(JobSeekerProfile, my_user=request.user)
+        serializer = JobSeekerProfileSerializer(profile)
+        return Response(serializer.data)
+
+class RecruiterProfileView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        profile = get_object_or_404(RecruiterProfile, my_user=request.user)
+        serializer = RecruiterProfileSerializer(profile)
+        return Response(serializer.data)
+
+class UpdateRecruiterProfileView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request):
+        profile = get_object_or_404(RecruiterProfile, my_user=request.user)
+        serializer = RecruiterProfileSerializer(profile, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"message": "Nhà tuyển dụng cập nhật hồ sơ thành công!"})
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class CVListCreateView(generics.ListCreateAPIView):
+    serializer_class = CVSerializer
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def get_queryset(self):
+        return CV.objects.filter(job_seeker_profile=self.request.user.job_seeker_profile, is_deleted=False)
+
+    def perform_create(self, serializer):
+        serializer.save(job_seeker_profile=self.request.user.job_seeker_profile)

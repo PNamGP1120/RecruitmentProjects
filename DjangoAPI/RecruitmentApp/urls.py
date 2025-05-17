@@ -2,7 +2,8 @@ from django.urls import path
 from .views import (
     RegisterView, UserUpdateView, JobSeekerRegisterView, RecruiterRegisterView,
     AdminApproveRecruiterView, AdminAssignAdminRoleView, LoginView, CurrentUserView,
-    RoleListView, SwitchRoleView
+    RoleListView, SwitchRoleView, JobSeekerProfileView, RecruiterProfileView, UpdateRecruiterProfileView,
+    CVListCreateView
 )
 
 urlpatterns = [
@@ -16,4 +17,9 @@ urlpatterns = [
     path('auth/user-info/', CurrentUserView.as_view(), name='current-user'),
     path('roles/', RoleListView.as_view(), name='roles-list'),
     path('auth/switch-role/', SwitchRoleView.as_view(), name='switch-role'),
+    path('jobseeker/profile/', JobSeekerProfileView.as_view(), name='job-seeker-profile'),
+    path('recruiter/profile/', RecruiterProfileView.as_view(), name='recruiter-profile'),
+    path('recruiter/profile/update/', UpdateRecruiterProfileView.as_view(), name='recruiter-profile-update'),
+    path('jobseeker/cvs/', CVListCreateView.as_view(), name='cv-list-create'),
+
 ]
