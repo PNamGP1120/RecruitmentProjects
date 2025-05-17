@@ -27,6 +27,7 @@ class RegisterSerializer(serializers.ModelSerializer):
 class UserUpdateSerializer(serializers.ModelSerializer):
     avatar_url = serializers.SerializerMethodField()
 
+
     class Meta:
         model = User
         fields = ['username', 'first_name', 'last_name', 'email', 'avatar', 'avatar_url']
