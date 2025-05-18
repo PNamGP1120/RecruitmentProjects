@@ -1,52 +1,36 @@
-const API_URL = 'http://192.168.1.95:8000'; // ✅ Thay bằng IP thật của máy bạn
+// src/api/auth.js
 
-// 🔐 Đăng nhập
-export async function login(username, password) {
-  const res = await fetch(`${API_URL}/auth/login/`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username, password }),
+import { apiRequest } from './request';
+import { ENDPOINTS } from './config';
+
+/**
+ * Đăng nhập
+ * @param {string} username
+ * @param {string} password
+ * @returns {object} { access, refresh }
+ */
+export const login = async (username, password) => {
+  return apiRequest(ENDPOINTS.LOGIN, 'POST', null, { username, password });
+};
+
+/**
+ * Đăng ký tài khoản
+ * @param {object} body - { username, email, password, password2 }
+ */
+export const register = async ({ username, email, password, password2 }) => {
+  return apiRequest(ENDPOINTS.REGISTER, 'POST', null, {
+    username,
+    email,
+    password,
+    password2,
   });
+};
 
-  const data = await res.json();
-
-  if (!res.ok) {
-    throw new Error(data.detail || 'Login failed');
-  }
-
-  return data; // { access, refresh }
-}
-
-// 👤 Lấy thông tin người dùng hiện tại
-export async function getCurrentUser(token) {
-  const res = await fetch(`${API_URL}/auth/user-info/`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
-  const data = await res.json();
-
-  if (!res.ok) {
-    throw new Error(data.detail || 'Failed to fetch user info');
-  }
-
-  return data;
-}
-
-// 🆕 Đăng ký tài khoản mới
-export async function register({ username, email, password, password2 }) {
-  const res = await fetch(`${API_URL}/auth/register/`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username, email, password, password2 }),
-  });
-
-  const data = await res.json();
-
-  if (!res.ok) {
-    throw new Error(data.message || 'Registration failed');
-  }
-
-  return data;
-}
+/**
+ * Lấy thông tin người dùng đang đăng nhập
+ * @param {string} token
+ * @returns {object} user info
+ */
+export const getCurrentUser = async (token) => {
+  return apiRequest(ENDPOINTS.CURRENT_USER, 'GET', token);
+};
