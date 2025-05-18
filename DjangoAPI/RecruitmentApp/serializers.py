@@ -26,16 +26,33 @@ class RegisterSerializer(serializers.ModelSerializer):
 
 class UserUpdateSerializer(serializers.ModelSerializer):
     avatar_url = serializers.SerializerMethodField()
+    active_role = serializers.SerializerMethodField()
+    roles = serializers.SerializerMethodField()
 
     class Meta:
         model = User
-        fields = ['username', 'first_name', 'last_name', 'email', 'avatar', 'avatar_url']
+        fields = ['username', 'first_name', 'last_name', 'email', 'avatar', 'avatar_url', 'active_role', 'roles']
 
     @staticmethod
     def get_avatar_url(obj):
         if obj.avatar:
             return obj.avatar.url
         return None
+
+    def get_active_role(self, obj):
+        if obj.active_role:
+            return obj.active_role.role_name
+        return None
+
+    def get_roles(self, obj):
+        user_roles = obj.user_roles.all()
+        return [
+            {
+                "role_name": ur.role.role_name,
+                "is_approved": ur.is_approved
+            }
+            for ur in user_roles
+        ]
 
 
 class JobSeekerRegisterSerializer(serializers.ModelSerializer):
@@ -55,7 +72,17 @@ class RecruiterRegisterSerializer(serializers.ModelSerializer):
 class RoleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Role
-        fields = ['id', 'role_name']
+        fields = ['role_name']
+
+
+class UserRoleSerializer(serializers.ModelSerializer):
+    role_name = serializers.CharField(source='role.role_name')
+    is_approved = serializers.BooleanField()
+
+    class Meta:
+        model = UserRole
+        fields = ['role_name', 'is_approved']
+
 
 
 class UserRoleApproveSerializer(serializers.Serializer):

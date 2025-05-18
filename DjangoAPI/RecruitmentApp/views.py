@@ -5,8 +5,9 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.contrib.auth import get_user_model
-from .models import Role, UserRole, JobSeekerProfile, RecruiterProfile, CV
 from .permissions import IsAuthenticated, AllowAnyUser, IsAdmin
+from .models import Role, UserRole, JobSeekerProfile, RecruiterProfile, CV
+from .permissions import IsAdmin
 from .serializers import (
     RegisterSerializer, UserUpdateSerializer, JobSeekerRegisterSerializer,
     RecruiterRegisterSerializer, RoleSerializer, UserRoleApproveSerializer,
