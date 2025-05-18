@@ -1,5 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
+from rest_framework.exceptions import PermissionDenied
+
 from .models import Role, UserRole, JobSeekerProfile, RecruiterProfile, Skill, CV
 
 User = get_user_model()
@@ -124,45 +126,47 @@ class CVSerializer(serializers.ModelSerializer):
         model = CV
         fields = ['file_name', 'file_path', 'version_name', 'is_default']
 
-    def _clear_existing_default(job_seeker_profile):
-        """
-        Gỡ các CV hiện tại đang đặt mặc định.
-        """
-        CV.objects.filter(job_seeker_profile=job_seeker_profile, is_default=True).update(is_default=False)
-
-    def validate(self, data):
-        """
-        Nếu đang đặt CV này là mặc định, đảm bảo không có CV mặc định khác trừ chính nó.
-        """
-        is_default = data.get('is_default', False)
-        request = self.context.get('request')
-        job_seeker_profile = getattr(request.user, 'job_seeker_profile', None)
-
-        if is_default and job_seeker_profile:
-            existing_default = CV.objects.filter(
-                job_seeker_profile=job_seeker_profile,
-                is_default=True
-            )
-            if self.instance:
-                existing_default = existing_default.exclude(id=self.instance.id)
-
-            if existing_default.exists():
-                raise serializers.ValidationError("Chỉ được phép có một CV mặc định.")
-        return data
-
     def create(self, validated_data):
-        job_seeker_profile = self.context['request'].user.job_seeker_profile
-        if validated_data.get('is_default', False):
-            self._clear_existing_default(job_seeker_profile)
-        validated_data['job_seeker_profile'] = job_seeker_profile
-        return super().create(validated_data)
+        user = self.context['request'].user
 
-    def update(self, instance, validated_data):
+        # Lấy hồ sơ JobSeekerProfile từ user
+        # Phòng khi user không phải là JobSeeker (ví dụ là Recruiter) → để kiểm soát lỗi.
+        job_seeker_profile = getattr(user, 'job_seeker_profile', None)
+        if not job_seeker_profile:
+            raise serializers.ValidationError("User không có hồ sơ người tìm việc.")
+
+        # Gán profile cho CV mới để liên kết giữa CV và người dùng
+        validated_data['job_seeker_profile'] = job_seeker_profile
+
+        # Nếu is_default=True, tắt mặc định cho các CV còn lại
         if validated_data.get('is_default', False):
-            self._clear_existing_default(instance.job_seeker_profile)
-        return super().update(instance, validated_data)
+            CV.objects.filter(job_seeker_profile=job_seeker_profile, is_default=True).update(is_default=False)
+
+        return super().create(validated_data)
 
     def to_representation(self, instance):
         rep = super().to_representation(instance)
         rep['file_path'] = instance.file_path.url if instance.file_path else None
         return rep
+
+class CVUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CV
+        fields = ['file_name', 'version_name', 'is_default']
+
+    def update(self, instance, validated_data):
+        user = self.context['request'].user
+
+        # Kiểm tra quyền sở hữu
+        job_seeker_profile = getattr(user, 'job_seeker_profile', None)
+        if not job_seeker_profile or instance.job_seeker_profile != job_seeker_profile:
+            raise PermissionDenied("You do not have permission to update this CV.")
+
+        # Nếu cập nhật is_default=True thì các CV khác phải tắt
+        if validated_data.get('is_default', False):
+            CV.objects.filter(
+                job_seeker_profile=job_seeker_profile,
+                is_default=True
+            ).exclude(id=instance.id).update(is_default=False)
+
+        return super().update(instance, validated_data)

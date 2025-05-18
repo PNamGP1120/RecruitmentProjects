@@ -3,7 +3,7 @@ from .views import (
     RegisterView, UserUpdateView, JobSeekerRegisterView, RecruiterRegisterView,
     AdminApproveRecruiterView, AdminAssignAdminRoleView, LoginView, CurrentUserView,
     RoleListView, SwitchRoleView, JobSeekerProfileView, RecruiterProfileView, UpdateRecruiterProfileView,
-    CVListCreateView
+    CVListCreateView, CVUpdateView, CVSoftDeleteView, CVSetDefaultView
 )
 
 urlpatterns = [
@@ -21,5 +21,7 @@ urlpatterns = [
     path('recruiter/profile/', RecruiterProfileView.as_view(), name='recruiter-profile'),
     path('recruiter/profile/update/', UpdateRecruiterProfileView.as_view(), name='recruiter-profile-update'),
     path('jobseeker/cvs/', CVListCreateView.as_view(), name='cv-list-create'),
-
+    path('jobseeker/cvs/<int:pk>/update/', CVUpdateView.as_view(), name='cv-update'),
+    path('jobseeker/cvs/delete/', CVSoftDeleteView.as_view(), name='cv-delete'),
+    path('jobseeker/cvs/<int:cv_id>/set-default/', CVSetDefaultView.as_view(), name='cv-set-default'),
 ]
