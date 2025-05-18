@@ -85,7 +85,6 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'recruitment',
         'USER': 'root',
-        'PASSWORD': 'Admin@123',
         'HOST': '',
     },
 }
@@ -139,9 +138,6 @@ import cloudinary.uploader
 
 # Configuration
 cloudinary.config(
-    cloud_name="dlysaj8pb",
-    api_key="462814331829971",
-    api_secret="T9kdTT7UVuzWUS7WBXJfI7eX_xE",  # Click 'View API Keys' above to copy your API secret
     secure=True
 )
 
