@@ -1,8 +1,7 @@
-// src/navigation/RecruiterStack.js
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import RecruiterTabNavigator from './RecruiterTabNavigator';
 
-import RecruiterHome from '../screens/Recruiter/HomeScreen';
 import CompanyProfileScreen from '../screens/Recruiter/CompanyProfileScreen';
 import CreateJobScreen from '../screens/Recruiter/CreateJobScreen';
 import JobPostListScreen from '../screens/Recruiter/JobPostListScreen';
@@ -14,8 +13,12 @@ const Stack = createNativeStackNavigator();
 
 export default function RecruiterStack() {
   return (
-    <Stack.Navigator id="recruiter-stack" initialRouteName="RecruiterHome" screenOptions={{ headerShown: true }}>
-      <Stack.Screen name="RecruiterHome" component={RecruiterHome} options={{ title: 'Trang chủ' }} />
+    <Stack.Navigator>
+      <Stack.Screen
+        name="RecruiterTabs"
+        component={RecruiterTabNavigator}
+        options={{ headerShown: false }}
+      />
       <Stack.Screen name="CompanyProfile" component={CompanyProfileScreen} options={{ title: 'Thông tin công ty' }} />
       <Stack.Screen name="CreateJob" component={CreateJobScreen} options={{ title: 'Tạo tin tuyển dụng' }} />
       <Stack.Screen name="JobPostList" component={JobPostListScreen} options={{ title: 'Danh sách tin tuyển dụng' }} />
@@ -23,5 +26,6 @@ export default function RecruiterStack() {
       <Stack.Screen name="CandidateProfile" component={CandidateProfileScreen} options={{ title: 'Hồ sơ ứng viên' }} />
       <Stack.Screen name="ScheduleInterview" component={ScheduleInterviewScreen} options={{ title: 'Lên lịch phỏng vấn' }} />
     </Stack.Navigator>
+
   );
 }

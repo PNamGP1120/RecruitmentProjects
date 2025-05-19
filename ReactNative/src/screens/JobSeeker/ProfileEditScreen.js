@@ -30,7 +30,7 @@ export default function ProfileEditScreen({ navigation }) {
   const pickImage = async () => {
     try {
       let result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ImagePicker.MediaType.Images, // SỬA DÒNG NÀY
         quality: 0.7,
         allowsEditing: true,
       });
@@ -62,28 +62,45 @@ export default function ProfileEditScreen({ navigation }) {
     setLoading(true);
 
     try {
-      const dataToUpdate = {
-        avatar,
-        first_name: firstName.trim(),
-        last_name: lastName.trim(),
-        username: username.trim(),
-        email: email.trim(),
-      };
-      console.log('dataToUpdate', dataToUpdate)
+      // Nếu avatar là file local, gửi dạng FormData
+      let dataToUpdate;
+      let isFormData = false;
+      console.log('avatar', avatar);
+      if (avatar && avatar.startsWith('file://')) {
+        dataToUpdate = new FormData();
+        dataToUpdate.append('first_name', firstName.trim());
+        dataToUpdate.append('last_name', lastName.trim());
+        dataToUpdate.append('username', username.trim());
+        dataToUpdate.append('email', email.trim());
+        dataToUpdate.append('avatar', {
+          uri: avatar,
+          name: 'avatar.jpg',
+          type: 'image/jpeg',
+        });
+        isFormData = true;
+      } else {
+        dataToUpdate = {
+          avatar,
+          first_name: firstName.trim(),
+          last_name: lastName.trim(),
+          username: username.trim(),
+          email: email.trim(),
+        };
+      }
 
-      const res = await updateUser(userToken, dataToUpdate);
-      console.log('res', res)
-      // Kiểm tra thành công: nếu có username hoặc id trả về là ổn
+      // Gọi API updateUser, truyền thêm isFormData nếu cần
+      const res = await updateUser(userToken, dataToUpdate, isFormData);
+
+
       if (res && (res.username || res.id)) {
-
         Alert.alert('Thành công', 'Cập nhật thông tin thành công');
-        // Cập nhật context user với dữ liệu mới từ server
         updateUserInfoInContext(res);
-        // navigation.goBack();
+        navigation.goBack();
       } else {
         Alert.alert('Lỗi', 'Cập nhật thất bại');
       }
     } catch (error) {
+      console.log('Error updating user:', error, JSON.stringify(error));
       Alert.alert('Lỗi', error.message || 'Có lỗi xảy ra');
     }
 

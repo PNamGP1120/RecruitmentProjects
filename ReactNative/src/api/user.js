@@ -11,30 +11,31 @@ export const updateUser = async (token, data) => {
   let body;
   let isFormData = false;
 
-  // Nếu có avatar là File (upload mới), dùng FormData
-  if (data.avatar && data.avatar instanceof File) {
+  // Nếu avatar là file local (object có uri), gửi FormData
+  if (data.avatar && typeof data.avatar === 'object' && data.avatar.uri) {
     isFormData = true;
     body = new FormData();
-
-    // Thêm các trường text
     for (const key in data) {
       if (key !== 'avatar' && data[key] !== undefined) {
         body.append(key, data[key]);
       }
     }
-    // Thêm file avatar
-    body.append('avatar', data.avatar);
+    body.append('avatar', {
+      uri: data.avatar.uri,
+      name: data.avatar.name || 'avatar.jpg',
+      type: data.avatar.type || 'image/jpeg',
+    });
   } else {
-    // Nếu avatar là string url hoặc không có avatar, gửi JSON bình thường
-    body = data;
+    // Nếu avatar là string url hoặc không có avatar, KHÔNG gửi avatar
+    const { avatar, ...rest } = data;
+    body = rest;
   }
 
-  // Gọi apiRequest với method PUT tới endpoint update user
   return apiRequest(
     ENDPOINTS.UPDATE_USER,
     'PUT',
     token,
-    isFormData ? body : body
+    body
   );
 };
 

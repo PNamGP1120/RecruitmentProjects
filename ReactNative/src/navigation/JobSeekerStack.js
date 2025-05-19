@@ -16,7 +16,7 @@ const Stack = createNativeStackNavigator();
 export default function JobSeekerStack() {
     return (
         <Stack.Navigator>
-            {/* Tab Navigator chứa các tab chính */}
+           
             <Stack.Screen
                 name="JobSeekerTabs"
                 component={JobSeekerTabNavigator}

@@ -1,4 +1,4 @@
-export const API_URL = 'http://192.168.229.29:8000';
+export const API_URL = 'http://192.168.1.51:8000';
 
 export const ENDPOINTS = {
     // Xac thuc, phan quyen
