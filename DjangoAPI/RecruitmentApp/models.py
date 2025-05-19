@@ -189,7 +189,7 @@ class JobPosting(BaseModel):
 
     def reject_job(self):
         """Từ chối tin tuyển dụng, thay đổi trạng thái về 'draft'"""
-        self.status = 'draft'
+        self.status = 'rejected'
         self.save()
 
     def save(self, *args, **kwargs):
@@ -247,29 +247,59 @@ class Application(BaseModel):
     def __str__(self):
         return f"{self.my_user.username} ứng tuyển vào {self.job_posting.title}"
 
+class Conversation(BaseModel):
+    """
+    Cuộc trò chuyện 1-1 giữa 2 user
+    """
+    user1 = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='conversations_as_user1'
+    )
+    user2 = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='conversations_as_user2'
+    )
+
+    class Meta:
+        unique_together = ('user1', 'user2')  # tránh trùng cuộc trò chuyện
+
+    def __str__(self):
+        return f"Conversation between {self.user1.username} and {self.user2.username}"
+
+    def save(self, *args, **kwargs):
+        # Đảm bảo user1 có username nhỏ hơn user2 để tránh duplicate kiểu (A,B) và (B,A)
+        if self.user1.id > self.user2.id:
+            self.user1, self.user2 = self.user2, self.user1
+        super().save(*args, **kwargs)
 
 class Message(BaseModel):
-    sender = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='sent_messages', on_delete=models.CASCADE)
-    recipient = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='received_messages', on_delete=models.CASCADE)
-    content = models.TextField()
+    conversation = models.ForeignKey(
+        Conversation, related_name='messages', on_delete=models.CASCADE, null=True, blank=True
+    )
+    sender = models.ForeignKey(
+        settings.AUTH_USER_MODEL, related_name='sent_messages', on_delete=models.CASCADE
+    )
+    recipient = models.ForeignKey(
+        settings.AUTH_USER_MODEL,  # Người nhận tin nhắn
+        related_name='received_messages',
+        on_delete=models.CASCADE, null=True, blank=True
+    )
+    content = models.TextField(blank=True, null=True)
+    attachment = CloudinaryField(resource_type='auto', blank=True, null=True)
     is_read = models.BooleanField(default=False)
     read_at = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
-        return f"From {self.sender} to {self.recipient}: {self.content[:20]}..."
-
-    class Meta:
-        verbose_name = "Tin nhắn"
-        verbose_name_plural = "Các tin nhắn"
-        ordering = ['created_at']
+        preview = self.content if self.content else "[File đính kèm]"
+        return f"From {self.sender.username}: {preview[:20]}..."
 
     def mark_as_read(self):
-        """
-        Đánh dấu tin nhắn là đã đọc và cập nhật thời gian đọc.
-        """
-        self.is_read = True
-        self.read_at = timezone.now()
-        self.save()
+        if not self.is_read:
+            self.is_read = True
+            self.read_at = timezone.now()
+            self.save()
 
     def save(self, *args, **kwargs):
         """
@@ -330,5 +360,3 @@ class Notification(BaseModel):
     class Meta:
         verbose_name = "Thông báo"
         verbose_name_plural = "Các thông báo"
-
-

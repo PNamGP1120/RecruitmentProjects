@@ -15,7 +15,8 @@ class IsAuthenticated(permissions.BasePermission):
     Yêu cầu người dùng phải đăng nhập.
     """
     def has_permission(self, request, view):
-        return request.user and request.user.is_authenticated
+        user = request.user
+        return user and user.is_authenticated
 
 
 class IsSuperAdmin(permissions.BasePermission):
@@ -39,16 +40,15 @@ class IsStaffAdmin(permissions.BasePermission):
 
 class IsAdmin(permissions.BasePermission):
     """
-    Cho phép truy cập nếu user có vai trò Admin (theo active_role trong model).
+    Cho phép truy cập nếu user có vai trò Admin (theo active_role trong model)
+    và vai trò đó được phê duyệt.
     """
     def has_permission(self, request, view):
         user = request.user
-        return (
-            user and
-            user.is_authenticated and
-            user.active_role and
-            user.active_role.role_name == 'Admin'
-        )
+        if not (user and user.is_authenticated and user.active_role and user.active_role.role_name == 'Admin'):
+            return False
+        # Kiểm tra role này có được phê duyệt không
+        return user.user_roles.filter(role__role_name='Admin', is_approved=True).exists()
 
 
 class IsRecruiter(permissions.BasePermission):
@@ -57,12 +57,9 @@ class IsRecruiter(permissions.BasePermission):
     """
     def has_permission(self, request, view):
         user = request.user
-        return (
-            user and
-            user.is_authenticated and
-            user.active_role and
-            user.active_role.role_name == 'Recruiter'
-        )
+        if not (user and user.is_authenticated and user.active_role and user.active_role.role_name == 'Recruiter'):
+            return False
+        return user.user_roles.filter(role__role_name='Recruiter', is_approved=True).exists()
 
 
 class IsJobSeeker(permissions.BasePermission):
@@ -71,12 +68,9 @@ class IsJobSeeker(permissions.BasePermission):
     """
     def has_permission(self, request, view):
         user = request.user
-        return (
-            user and
-            user.is_authenticated and
-            user.active_role and
-            user.active_role.role_name == 'JobSeeker'
-        )
+        if not (user and user.is_authenticated and user.active_role and user.active_role.role_name == 'JobSeeker'):
+            return False
+        return user.user_roles.filter(role__role_name='JobSeeker', is_approved=True).exists()
 
 
 class IsAuthenticatedAndApproved(permissions.BasePermission):
@@ -115,3 +109,19 @@ class DenyAll(permissions.BasePermission):
     """
     def has_permission(self, request, view):
         return False
+
+
+class IsRecruiterWithProfile(permissions.BasePermission):
+    """
+    Cho phép truy cập nếu user đã đăng nhập
+    và có hồ sơ Nhà tuyển dụng (ntd_profile).
+    """
+
+    def has_permission(self, request, view):
+        user = request.user
+        return (
+            user and
+            user.is_authenticated and
+            hasattr(user, 'recruiter_profile') and
+            user.recruiter_profile is not None
+        )
