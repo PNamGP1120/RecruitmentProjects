@@ -142,6 +142,7 @@ class AdminApproveRecruiterView(APIView):
             "approved_roles": approved_roles
         })
 
+
 class AdminAssignAdminRoleView(APIView):
     permission_classes = [IsAdmin]
 
@@ -207,6 +208,7 @@ class SwitchRoleView(APIView):
         except (Role.DoesNotExist, UserRole.DoesNotExist):
             return Response({"error": "Vai trò không hợp lệ hoặc chưa được phê duyệt"}, status=400)
 
+
 class JobSeekerProfileView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -215,6 +217,7 @@ class JobSeekerProfileView(APIView):
         serializer = JobSeekerProfileSerializer(profile)
         return Response(serializer.data)
 
+
 class RecruiterProfileView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -222,6 +225,7 @@ class RecruiterProfileView(APIView):
         profile = get_object_or_404(RecruiterProfile, my_user=request.user)
         serializer = RecruiterProfileSerializer(profile)
         return Response(serializer.data)
+
 
 class UpdateRecruiterProfileView(APIView):
     permission_classes = [IsAuthenticated]
@@ -234,6 +238,7 @@ class UpdateRecruiterProfileView(APIView):
             return Response({"message": "Nhà tuyển dụng cập nhật hồ sơ thành công!"})
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
 class CVListCreateView(generics.ListCreateAPIView):
     serializer_class = CVSerializer
     permission_classes = [IsJobSeeker]
@@ -244,6 +249,7 @@ class CVListCreateView(generics.ListCreateAPIView):
 
     def perform_create(self, serializer):
         serializer.save(job_seeker_profile=self.request.user.job_seeker_profile)
+
 
 class CVUpdateView(APIView):
     permission_classes = [IsAuthenticated]
@@ -268,6 +274,7 @@ class CVUpdateView(APIView):
             "message": "Cập nhật CV thành công!",
             "cv": serializer.data
         }, status=status.HTTP_200_OK)
+
 
 class CVSoftDeleteView(APIView):
     permission_classes = [IsJobSeeker]  # Chỉ người tìm việc mới được quyền xóa CV
@@ -297,6 +304,7 @@ class CVSoftDeleteView(APIView):
             "message": f"Đã xóa thành công {count} CV.",
             "deleted_ids": [cv.id for cv in cvs]
         }, status=status.HTTP_200_OK)
+
 
 class CVSetDefaultView(APIView):
     permission_classes = [IsAuthenticated]
