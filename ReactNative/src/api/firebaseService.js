@@ -1,25 +1,17 @@
-// src/api/firebaseService.js
+import { database } from '../firebaseConfig';
+import { ref, push, onValue } from 'firebase/database';
 
-import { ref, push, set, onChildAdded } from "firebase/database";
-import { database } from "../firebaseConfig";
-
-// Gửi tin nhắn vào Firebase Realtime Database
-export const sendMessage = (conversationId, senderId, content) => {
-  const messageRef = ref(database, `conversations/${conversationId}/messages`);
-  const newMessageRef = push(messageRef);
-  set(newMessageRef, {
-    senderId: senderId,
-    content: content,
-    timestamp: Date.now(),
-  });
-};
-
-// Lắng nghe tin nhắn mới trong cuộc hội thoại
-export const listenForMessages = (conversationId, onNewMessage) => {
+export function listenMessages(conversationId, callback) {
   const messagesRef = ref(database, `conversations/${conversationId}/messages`);
-  
-  onChildAdded(messagesRef, (snapshot) => {
-    const newMessage = snapshot.val();
-    onNewMessage(newMessage); // Callback khi có tin nhắn mới
+  onValue(messagesRef, snapshot => {
+    const data = snapshot.val() || {};
+    const messages = Object.entries(data).map(([id, msg]) => ({ id, ...msg }));
+    messages.sort((a,b) => a.timestamp - b.timestamp);
+    callback(messages);
   });
-};
+}
+
+export function sendMessage(conversationId, message) {
+  const messagesRef = ref(database, `conversations/${conversationId}/messages`);
+  push(messagesRef, message);
+}

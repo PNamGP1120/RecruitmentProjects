@@ -1,54 +1,64 @@
-// src/screens/JobSeeker/ChatScreen.js
-import React, { useState, useEffect, useContext } from "react";
-import { View, Text, TextInput, Button, FlatList } from "react-native";
-import { sendMessage, listenForMessages } from "../../api/firebaseService"; // Firebase service
-import { AuthContext } from "../../contexts/AuthContext"; // Để lấy thông tin người dùng
+import React, { useContext, useEffect, useState } from 'react';
+import { View, FlatList, TextInput, Button, Text } from 'react-native';
+import { ChatContext } from '../../contexts/ChatContext';
 
-const ChatScreen = ({ route }) => {
-  const { conversationId } = route.params; // Lấy conversationId từ params
-  const [messages, setMessages] = useState([]);
-  const [messageContent, setMessageContent] = useState("");
-  const { user } = useContext(AuthContext); // Lấy thông tin người dùng
+export default function ChatScreen({ route }) {
+  const { conversationId } = route.params;
+  const { currentMessages, subscribeMessages, sendNewMessage } = useContext(ChatContext);
+
+  const [inputText, setInputText] = useState('');
 
   useEffect(() => {
-    // Lắng nghe tin nhắn mới trong cuộc hội thoại
-    listenForMessages(conversationId, (newMessage) => {
-      setMessages((prevMessages) => [...prevMessages, newMessage]);
-    });
-
-    return () => {
-      // Cleanup khi component unmount
-    };
+    if (conversationId) {
+      subscribeMessages(conversationId);
+    }
   }, [conversationId]);
 
-  const handleSendMessage = () => {
-    if (messageContent.trim()) {
-      sendMessage(conversationId, user.id, messageContent); // Gửi tin nhắn
-      setMessageContent(""); // Reset input field
-    }
+  const handleSend = () => {
+    if (inputText.trim() === '') return;
+
+    const message = {
+      sender_id: 'currentUserId', // Lấy userId từ AuthContext hoặc props
+      content: inputText.trim(),
+      timestamp: Date.now(),
+      is_read: false,
+    };
+
+    sendNewMessage(conversationId, message);
+    setInputText('');
   };
 
-  return (
-    <View>
-      <FlatList
-        data={messages}
-        renderItem={({ item }) => (
-          <View>
-            <Text>{item.senderId}: {item.content}</Text>
-          </View>
-        )}
-        keyExtractor={(item, index) => index.toString()}
-      />
-
-      <TextInput
-        value={messageContent}
-        onChangeText={setMessageContent}
-        placeholder="Type a message"
-      />
-
-      <Button title="Send" onPress={handleSendMessage} />
+  const renderItem = ({ item }) => (
+    <View style={{ padding: 8, marginVertical: 4, backgroundColor: '#eee', borderRadius: 8 }}>
+      <Text>{item.sender_id}: {item.content}</Text>
+      <Text style={{ fontSize: 10, color: '#666' }}>{new Date(item.timestamp).toLocaleTimeString()}</Text>
     </View>
   );
-};
 
-export default ChatScreen;
+  return (
+    <View style={{ flex: 1, padding: 12 }}>
+      <FlatList
+        data={currentMessages}
+        keyExtractor={item => item.id}
+        renderItem={renderItem}
+        inverted // để tin nhắn mới ở dưới
+      />
+      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        <TextInput
+          value={inputText}
+          onChangeText={setInputText}
+          placeholder="Nhập tin nhắn..."
+          style={{
+            flex: 1,
+            borderWidth: 1,
+            borderColor: '#ccc',
+            borderRadius: 20,
+            paddingHorizontal: 12,
+            paddingVertical: 8,
+          }}
+        />
+        <Button title="Gửi" onPress={handleSend} />
+      </View>
+    </View>
+  );
+}

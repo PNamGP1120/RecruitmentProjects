@@ -1,64 +1,35 @@
-// src/screens/JobSeeker/ConversationsScreen.js
+import React, { useEffect, useContext } from 'react';
+import { FlatList, TouchableOpacity, Text, View } from 'react-native';
+import { ChatContext } from '../../contexts/ChatContext';
+import api from '../../api/user'; // giả sử api gọi backend
 
-import React, { useState, useEffect, useContext } from 'react';
-import { View, Text, FlatList, TouchableOpacity } from 'react-native';
-import { getDatabase, ref, onValue } from 'firebase/database';
-import { database } from '../../firebaseConfig';
-import { AuthContext } from '../../contexts/AuthContext'; // Để lấy thông tin người dùng
-
-const ConversationsScreen = ({ navigation }) => { // `navigation` is now passed correctly
-  const [conversations, setConversations] = useState([]);
-  const { user } = useContext(AuthContext); // Lấy thông tin người dùng
+export default function ConversationsScreen({ navigation }) {
+  const { conversations, setConversations } = useContext(ChatContext);
 
   useEffect(() => {
-    const conversationsRef = ref(database, 'conversations/');
-    
-    // Lắng nghe thay đổi cuộc hội thoại
-    onValue(conversationsRef, (snapshot) => {
-      const data = snapshot.val();
-      const loadedConversations = [];
+    // Load danh sách conversation từ backend khi mount
+    api.getConversations()
+      .then(response => setConversations(response.data))
+      .catch(err => console.log(err));
+  }, []);
 
-      for (let conversationId in data) {
-        if (data[conversationId].participants[user.id]) { // Chỉ lấy cuộc hội thoại của người dùng
-          loadedConversations.push({
-            id: conversationId,
-            participants: data[conversationId].participants,
-            lastMessage: data[conversationId].messages 
-              ? Object.values(data[conversationId].messages).pop().content
-              : 'No messages yet',
-          });
-        }
-      }
-
-      setConversations(loadedConversations); // Cập nhật danh sách cuộc hội thoại
-    });
-
-    return () => {
-      // Cleanup khi component unmount
-    };
-  }, [user.id]);
-
-  // Chuyển tới màn hình chat khi người dùng chọn một cuộc hội thoại
-  const handleConversationPress = (conversationId) => {
-    navigation.navigate('Chat', { conversationId }); // Chuyển đến màn hình Chat với conversationId
-  };
+  const renderItem = ({ item }) => (
+    <TouchableOpacity
+      onPress={() => navigation.navigate('ChatScreen', { conversationId: item.id })}
+      style={{ padding: 16, borderBottomWidth: 1, borderColor: '#ccc' }}
+    >
+      <Text>{item.user1} & {item.user2}</Text>
+      <Text>{new Date(item.created_at).toLocaleString()}</Text>
+    </TouchableOpacity>
+  );
 
   return (
-    <View>
+    <View style={{ flex: 1 }}>
       <FlatList
         data={conversations}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <TouchableOpacity onPress={() => handleConversationPress(item.id)}>
-            <View>
-              <Text>Conversation with {Object.keys(item.participants).join(', ')}</Text>
-              <Text>Last Message: {item.lastMessage}</Text>
-            </View>
-          </TouchableOpacity>
-        )}
+        keyExtractor={item => item.id.toString()}
+        renderItem={renderItem}
       />
     </View>
   );
-};
-
-export default ConversationsScreen;
+}

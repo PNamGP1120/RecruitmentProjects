@@ -1,5 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
+from rest_framework_nested import routers
 
 from .views import RegisterView, LoginView, UserDetailUpdateView, CurrentUserView, RoleListView, JobSeekerRegisterView, \
     RecruiterRegisterView, AdminApproveRecruiterView, AdminAssignAdminRoleView, SwitchRoleView, JobPostingViewSet, \
@@ -8,8 +9,10 @@ from .views import RegisterView, LoginView, UserDetailUpdateView, CurrentUserVie
 router = DefaultRouter()
 router.register(r'recruiter/job-postings', JobPostingViewSet, basename='job-posting')
 router.register(r'conversations', ConversationViewSet)
-router.register(r'conversations/(?P<conversation_id>\d+)/messages', MessageViewSet)
-# router.register(r'messages', MessageViewSet, basename="messages")
+conversations_router = routers.NestedSimpleRouter(router, r'conversations', lookup='conversation')
+conversations_router.register(r'messages', MessageViewSet, basename='conversation-messages')
+
+
 urlpatterns = [
     path('', include(router.urls)),
     path('auth/register/', RegisterView.as_view(), name='register'),

@@ -1,21 +1,31 @@
-// src/contexts/ChatContext.js
+import React, { createContext, useState, useEffect } from 'react';
+import { listenMessages, sendMessage } from '../api/firebaseService';
 
-import React, { createContext, useState, useContext } from "react";
-
-const ChatContext = createContext();
+export const ChatContext = createContext();
 
 export const ChatProvider = ({ children }) => {
-  const [activeConversation, setActiveConversation] = useState(null);
+  const [conversations, setConversations] = useState([]);
+  const [currentMessages, setCurrentMessages] = useState([]);
 
-  const setConversation = (conversationId) => {
-    setActiveConversation(conversationId);
+  // Hàm load messages realtime khi chọn conversation
+  const subscribeMessages = (conversationId) => {
+    listenMessages(conversationId, setCurrentMessages);
+  };
+
+  // Hàm gửi message
+  const sendNewMessage = (conversationId, message) => {
+    sendMessage(conversationId, message);
   };
 
   return (
-    <ChatContext.Provider value={{ activeConversation, setConversation }}>
+    <ChatContext.Provider value={{
+      conversations,
+      setConversations,
+      currentMessages,
+      subscribeMessages,
+      sendNewMessage,
+    }}>
       {children}
     </ChatContext.Provider>
   );
 };
-
-export const useChat = () => useContext(ChatContext);
