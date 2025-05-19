@@ -1,3 +1,22 @@
+
+from django.shortcuts import get_object_or_404
+from django.utils import timezone
+from rest_framework import generics, status
+from rest_framework.exceptions import PermissionDenied, NotFound
+from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from django.contrib.auth import get_user_model
+from .permissions import IsAuthenticated, AllowAnyUser, IsAdmin, IsJobSeeker
+from .models import Role, UserRole, JobSeekerProfile, RecruiterProfile, CV, MyUser
+from .permissions import IsAdmin
+from .serializers import (
+    RegisterSerializer, UserUpdateSerializer, JobSeekerRegisterSerializer,
+    RecruiterRegisterSerializer, RoleSerializer, UserRoleApproveSerializer,
+    SwitchRoleSerializer, JobSeekerProfileSerializer, RecruiterProfileSerializer, CVSerializer, CVUpdateSerializer
+)
+from rest_framework_simplejwt.views import TokenObtainPairView
+
 from django.contrib.auth import authenticate, get_user_model
 from django.db import models
 from django.utils import timezone
@@ -11,6 +30,7 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 from rest_framework_simplejwt.tokens import RefreshToken
 
+
 from .models import Role, JobSeekerProfile, UserRole, RecruiterProfile, JobPosting, Conversation, Message
 from .permissions import AllowAnyUser, IsOwnerOrAdmin, IsAuthenticated, IsAdmin, IsSuperAdmin, IsRecruiterWithProfile, \
     IsRecruiter
@@ -22,6 +42,9 @@ from .serializers import RegisterSerializer, LoginSerializer, UserUpdateSerializ
 User = get_user_model()
 
 class RegisterView(generics.CreateAPIView):
+
+    permission_classes = [AllowAnyUser]
+
     serializer_class = RegisterSerializer
     permission_classes = [AllowAnyUser]
 
@@ -60,7 +83,9 @@ class LoginView(APIView):
 
 class UserDetailUpdateView(generics.RetrieveUpdateAPIView):
     serializer_class = UserUpdateSerializer
+
     permission_classes = [IsAuthenticated, IsOwnerOrAdmin]
+
 
     def get_object(self):
         # user chỉ được xem/sửa chính mình
@@ -69,9 +94,14 @@ class UserDetailUpdateView(generics.RetrieveUpdateAPIView):
 class CurrentUserView(APIView):
     permission_classes = [IsAuthenticated]
 
+
+class JobSeekerRegisterView(APIView):
+    permission_classes = [IsAuthenticated]
+
     def get(self, request):
         serializer = CurrentUserSerializer(request.user)
         return Response(serializer.data)
+
 
 
 class RoleListView(generics.ListAPIView):
@@ -187,7 +217,9 @@ class AdminApproveRecruiterView(APIView):
 
 
 class AdminAssignAdminRoleView(APIView):
+
     permission_classes = [IsSuperAdmin]
+
 
     def post(self, request):
         serializer = AdminAssignAdminRoleSerializer(data=request.data)
@@ -197,6 +229,21 @@ class AdminAssignAdminRoleView(APIView):
         try:
             user = User.objects.get(pk=user_id)
         except User.DoesNotExist:
+
+            return Response({"error": "User không tồn tại"}, status=404)
+
+
+class LoginView(TokenObtainPairView):
+    permission_classes = [AllowAnyUser]
+
+
+class CurrentUserView(generics.RetrieveAPIView):
+    serializer_class = UserUpdateSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self):
+        return self.request.user
+
             return Response({"detail": "User không tồn tại."}, status=status.HTTP_404_NOT_FOUND)
 
         admin_role = Role.objects.get(role_name='Admin')
@@ -211,14 +258,22 @@ class AdminAssignAdminRoleView(APIView):
             }
         )
 
+
         user.active_role = admin_role
         user.save()
+
+
+class RoleListView(generics.ListAPIView):
+    queryset = Role.objects.all()
+    serializer_class = RoleSerializer
+    permission_classes = [AllowAnyUser]
 
         return Response({
             "message": "Gán quyền Admin thành công",
             "user_id": user.id,
             "active_role": admin_role.role_name
         }, status=status.HTTP_200_OK)
+
 
 
 class SwitchRoleView(APIView):
@@ -418,4 +473,123 @@ class MessageViewSet(ModelViewSet):
 
         return Response(serializer.data)
 
+
+
+        except (Role.DoesNotExist, UserRole.DoesNotExist):
+            return Response({"error": "Vai trò không hợp lệ hoặc chưa được phê duyệt"}, status=400)
+
+class JobSeekerProfileView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        profile = get_object_or_404(JobSeekerProfile, my_user=request.user)
+        serializer = JobSeekerProfileSerializer(profile)
+        return Response(serializer.data)
+
+class RecruiterProfileView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        profile = get_object_or_404(RecruiterProfile, my_user=request.user)
+        serializer = RecruiterProfileSerializer(profile)
+        return Response(serializer.data)
+
+class UpdateRecruiterProfileView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request):
+        profile = get_object_or_404(RecruiterProfile, my_user=request.user)
+        serializer = RecruiterProfileSerializer(profile, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"message": "Nhà tuyển dụng cập nhật hồ sơ thành công!"})
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class CVListCreateView(generics.ListCreateAPIView):
+    serializer_class = CVSerializer
+    permission_classes = [IsJobSeeker]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def get_queryset(self):
+        return CV.objects.filter(job_seeker_profile=self.request.user.job_seeker_profile, is_deleted=False)
+
+    def perform_create(self, serializer):
+        serializer.save(job_seeker_profile=self.request.user.job_seeker_profile)
+
+class CVUpdateView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request, pk):
+        user = request.user
+
+        if user.active_role and user.active_role.role_name == Role.Recruiter:
+            raise PermissionDenied("Nhà tuyển dụng không được phép chỉnh sửa CV.")
+
+        try:
+            cv = CV.objects.get(pk=pk, job_seeker_profile=user.job_seeker_profile)
+        except CV.DoesNotExist:
+            raise NotFound("CV không tìm thấy hoặc bị từ chối cung cấp cho người dùng hiện tại.")
+
+        # Gán context cho serializer
+        serializer = CVUpdateSerializer(cv, data=request.data, partial=False, context={'request': request})
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response({
+            "message": "Cập nhật CV thành công!",
+            "cv": serializer.data
+        }, status=status.HTTP_200_OK)
+
+class CVSoftDeleteView(APIView):
+    permission_classes = [IsJobSeeker]  # Chỉ người tìm việc mới được quyền xóa CV
+
+    def post(self, request):
+        cv_ids = request.data.get('cv_ids', [])
+        if not isinstance(cv_ids, list) or not all(isinstance(i, int) for i in cv_ids):
+            return Response({"error": "Danh sách ID không hợp lệ"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Lọc CV chưa bị xóa thuộc về đúng người dùng hiện tại
+        cvs = CV.objects.filter(
+            id__in=cv_ids,
+            job_seeker_profile=request.user.job_seeker_profile,
+            is_deleted=False
+        )
+
+        if not cvs.exists():
+            return Response({"message": "Không có CV hợp lệ để xóa."}, status=status.HTTP_404_NOT_FOUND)
+
+        count = 0
+        for cv in cvs:
+            cv.is_deleted = True
+            cv.save()
+            count += 1
+
+        return Response({
+            "message": f"Đã xóa thành công {count} CV.",
+            "deleted_ids": [cv.id for cv in cvs]
+        }, status=status.HTTP_200_OK)
+
+class CVSetDefaultView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, cv_id):
+        profile = request.user.job_seeker_profile
+
+        # Tìm CV thuộc về user và chưa bị xóa
+        try:
+            cv = CV.objects.get(id=cv_id, job_seeker_profile=profile, is_deleted=False)
+        except CV.DoesNotExist:
+            raise NotFound("CV không tồn tại hoặc không thuộc quyền sở hữu.")
+
+        if cv.is_default:
+            return Response({"message": "CV này đã là CV mặc định."}, status=status.HTTP_200_OK)
+
+        # Đặt tất cả CV về mặc định = False
+        CV.objects.filter(job_seeker_profile=profile, is_deleted=False).update(is_default=False)
+
+        # Đặt CV hiện tại thành mặc định
+        cv.is_default = True
+        cv.save()
+
+        return Response({"message": "Cập nhật thành công: CV đã trở thành mặc định."}, status=status.HTTP_200_OK)
 
