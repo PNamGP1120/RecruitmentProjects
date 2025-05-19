@@ -1,146 +1,54 @@
-import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  FlatList,
-  StyleSheet,
-  TouchableOpacity,
-  Image,
-  TextInput,
-} from 'react-native';
+// src/screens/JobSeeker/ChatScreen.js
+import React, { useState, useEffect, useContext } from "react";
+import { View, Text, TextInput, Button, FlatList } from "react-native";
+import { sendMessage, listenForMessages } from "../../api/firebaseService"; // Firebase service
+import { AuthContext } from "../../contexts/AuthContext"; // Để lấy thông tin người dùng
 
-// Dữ liệu mẫu
-const sampleChats = [
-  {
-    id: '1',
-    name: 'Nguyễn Văn A',
-    avatar: 'https://randomuser.me/api/portraits/men/1.jpg',
-    lastMessage: 'Chào bạn, bạn có thể gửi CV được không?',
-    lastTime: '09:30',
-  },
-  {
-    id: '2',
-    name: 'Công ty ABC',
-    avatar: 'https://upload.wikimedia.org/wikipedia/commons/a/a6/Logo_NIKE.svg',
-    lastMessage: 'Cảm ơn bạn đã ứng tuyển, chúng tôi sẽ liên hệ sớm.',
-    lastTime: 'Hôm qua',
-  },
-  {
-    id: '3',
-    name: 'Lê Thị B',
-    avatar: 'https://randomuser.me/api/portraits/women/2.jpg',
-    lastMessage: 'Bạn có thể tham gia phỏng vấn lúc 3 giờ chiều không?',
-    lastTime: 'Thứ 2',
-  },
-];
-
-export default function ChatScreen({ navigation }) {
-  const [searchText, setSearchText] = useState('');
-  const [filteredChats, setFilteredChats] = useState(sampleChats);
+const ChatScreen = ({ route }) => {
+  const { conversationId } = route.params; // Lấy conversationId từ params
+  const [messages, setMessages] = useState([]);
+  const [messageContent, setMessageContent] = useState("");
+  const { user } = useContext(AuthContext); // Lấy thông tin người dùng
 
   useEffect(() => {
-    if (!searchText) {
-      setFilteredChats(sampleChats);
-    } else {
-      const filtered = sampleChats.filter(chat =>
-        chat.name.toLowerCase().includes(searchText.toLowerCase())
-      );
-      setFilteredChats(filtered);
-    }
-  }, [searchText]);
+    // Lắng nghe tin nhắn mới trong cuộc hội thoại
+    listenForMessages(conversationId, (newMessage) => {
+      setMessages((prevMessages) => [...prevMessages, newMessage]);
+    });
 
-  const renderItem = ({ item }) => (
-    <TouchableOpacity
-      style={styles.chatItem}
-      onPress={() => navigation.navigate('ChatDetail', { chatId: item.id })}
-    >
-      <Image source={{ uri: item.avatar }} style={styles.avatar} />
-      <View style={styles.chatInfo}>
-        <View style={styles.chatHeader}>
-          <Text style={styles.chatName}>{item.name}</Text>
-          <Text style={styles.chatTime}>{item.lastTime}</Text>
-        </View>
-        <Text style={styles.lastMessage} numberOfLines={1}>
-          {item.lastMessage}
-        </Text>
-      </View>
-    </TouchableOpacity>
-  );
+    return () => {
+      // Cleanup khi component unmount
+    };
+  }, [conversationId]);
+
+  const handleSendMessage = () => {
+    if (messageContent.trim()) {
+      sendMessage(conversationId, user.id, messageContent); // Gửi tin nhắn
+      setMessageContent(""); // Reset input field
+    }
+  };
 
   return (
-    <View style={styles.container}>
-      <TextInput
-        placeholder="Tìm kiếm"
-        style={styles.searchInput}
-        value={searchText}
-        onChangeText={setSearchText}
+    <View>
+      <FlatList
+        data={messages}
+        renderItem={({ item }) => (
+          <View>
+            <Text>{item.senderId}: {item.content}</Text>
+          </View>
+        )}
+        keyExtractor={(item, index) => index.toString()}
       />
 
-      <FlatList
-        data={filteredChats}
-        keyExtractor={(item) => item.id}
-        renderItem={renderItem}
-        contentContainerStyle={{ paddingBottom: 20 }}
+      <TextInput
+        value={messageContent}
+        onChangeText={setMessageContent}
+        placeholder="Type a message"
       />
+
+      <Button title="Send" onPress={handleSendMessage} />
     </View>
   );
-}
+};
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f7f9ff',
-    paddingHorizontal: 15,
-    paddingTop: 10,
-  },
-  searchInput: {
-    backgroundColor: '#fff',
-    borderRadius: 30,
-    paddingHorizontal: 20,
-    height: 45,
-    fontSize: 16,
-    marginBottom: 15,
-    borderWidth: 1,
-    borderColor: '#ccc',
-  },
-  chatItem: {
-    flexDirection: 'row',
-    backgroundColor: '#fff',
-    padding: 12,
-    borderRadius: 12,
-    marginBottom: 10,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    shadowOffset: { width: 0, height: 2 },
-  },
-  avatar: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#ddd',
-  },
-  chatInfo: {
-    flex: 1,
-    marginLeft: 12,
-  },
-  chatHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 4,
-  },
-  chatName: {
-    fontWeight: '700',
-    fontSize: 17,
-    color: '#004aad',
-  },
-  chatTime: {
-    fontSize: 13,
-    color: '#888',
-  },
-  lastMessage: {
-    color: '#555',
-    fontSize: 15,
-  },
-});
+export default ChatScreen;

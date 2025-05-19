@@ -5,6 +5,7 @@ from django.contrib.auth.password_validation import validate_password
 from django.utils import timezone
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
+
 from rest_framework.exceptions import PermissionDenied
 
 from .models import Role, UserRole, JobSeekerProfile, RecruiterProfile, Skill, CV, JobPosting, Message, Conversation
@@ -195,6 +196,9 @@ class AdminApproveRecruiterSerializer(serializers.Serializer):
     )
     is_approved = serializers.BooleanField(default=True)
 
+    class Meta:
+        model = UserRole
+        fields = ['role_name', 'is_approved']
 
 class AdminAssignAdminRoleSerializer(serializers.Serializer):
     user_id = serializers.IntegerField()

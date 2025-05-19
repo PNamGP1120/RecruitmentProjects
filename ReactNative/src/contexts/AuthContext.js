@@ -43,15 +43,31 @@ export const AuthProvider = ({children}) => {
         }
     };
 
-
     const signOut = async () => {
         await AsyncStorage.removeItem('userToken');
         setUserToken(null);
         setUserInfo(null);
     };
 
+    // Hàm cập nhật thông tin user mới trong context
+    const updateUserInfoInContext = (newUserInfo) => {
+        setUserInfo(prevUserInfo => ({
+            ...prevUserInfo,
+            ...newUserInfo,
+        }));
+    };
+
     return (
-        <AuthContext.Provider value={{userToken, userInfo, loading, signIn, signOut}}>
+        <AuthContext.Provider
+          value={{
+            userToken,
+            userInfo,
+            loading,
+            signIn,
+            signOut,
+            updateUserInfoInContext, // expose hàm này để dùng trong component khác
+          }}
+        >
             {children}
         </AuthContext.Provider>
     );

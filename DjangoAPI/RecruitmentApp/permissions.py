@@ -94,6 +94,7 @@ class IsOwnerOrAdmin(permissions.BasePermission):
             return False
         if user.is_staff:
             return True
+        # Kiểm tra các trường phổ biến để xác định chủ sở hữu
         if hasattr(obj, 'my_user'):
             return obj.my_user == user
         if hasattr(obj, 'sender'):

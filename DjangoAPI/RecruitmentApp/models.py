@@ -170,6 +170,7 @@ class JobPosting(BaseModel):
         ('draft', 'Nháp'),
         ('pending_approval', 'Chờ phê duyệt'),
         ('approved', 'Đã phê duyệt'),
+        ('rejected', 'Bị từ chối'),
         ('closed', 'Đã đóng'),
     ]
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
@@ -274,6 +275,34 @@ class Conversation(BaseModel):
             self.user1, self.user2 = self.user2, self.user1
         super().save(*args, **kwargs)
 
+class Conversation(BaseModel):
+    """
+    Cuộc trò chuyện 1-1 giữa 2 user
+    """
+    user1 = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='conversations_as_user1'
+    )
+    user2 = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='conversations_as_user2'
+    )
+
+    class Meta:
+        unique_together = ('user1', 'user2')  # tránh trùng cuộc trò chuyện
+
+    def __str__(self):
+        return f"Conversation between {self.user1.username} and {self.user2.username}"
+
+    def save(self, *args, **kwargs):
+        # Đảm bảo user1 có username nhỏ hơn user2 để tránh duplicate kiểu (A,B) và (B,A)
+        if self.user1.id > self.user2.id:
+            self.user1, self.user2 = self.user2, self.user1
+        super().save(*args, **kwargs)
+
+
 class Message(BaseModel):
     conversation = models.ForeignKey(
         Conversation, related_name='messages', on_delete=models.CASCADE, null=True, blank=True
@@ -360,3 +389,5 @@ class Notification(BaseModel):
     class Meta:
         verbose_name = "Thông báo"
         verbose_name_plural = "Các thông báo"
+
+
