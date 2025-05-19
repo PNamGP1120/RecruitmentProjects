@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect } from 'react';
+import React, { useContext, useState } from 'react';
 import {
   View,
   Text,
@@ -9,45 +9,84 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
+  Image,
 } from 'react-native';
 import { AuthContext } from '../../contexts/AuthContext';
+import * as ImagePicker from 'expo-image-picker';
+import { updateUser } from '../../api/user'; // hàm api updateUser đã chuẩn bị
 
 export default function ProfileEditScreen({ navigation }) {
-  const { userInfo, userToken, signOut } = useContext(AuthContext);
+  const { userInfo, userToken, updateUserInfoInContext } = useContext(AuthContext);
 
+  const [avatar, setAvatar] = useState(userInfo?.avatar_url || null);
   const [firstName, setFirstName] = useState(userInfo?.first_name || '');
   const [lastName, setLastName] = useState(userInfo?.last_name || '');
+  const [username, setUsername] = useState(userInfo?.username || '');
   const [email, setEmail] = useState(userInfo?.email || '');
-  const [phone, setPhone] = useState(userInfo?.phone_number || '');
   const [loading, setLoading] = useState(false);
 
-  // Hàm gọi API update thông tin user
+  // Chọn ảnh từ thư viện
+  const pickImage = async () => {
+    try {
+      let result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        quality: 0.7,
+        allowsEditing: true,
+      });
+      if (!result.canceled) {
+        setAvatar(result.assets[0].uri);
+      }
+    } catch (error) {
+      Alert.alert('Lỗi', 'Không thể chọn ảnh');
+    }
+  };
+
+  // Validate email
+  const validateEmail = (email) => {
+    const regex = /\S+@\S+\.\S+/;
+    return regex.test(email);
+  };
+
+  // Xử lý submit cập nhật
   const handleUpdate = async () => {
-    if (!firstName.trim() || !lastName.trim() || !email.trim()) {
-      Alert.alert('Lỗi', 'Vui lòng điền đầy đủ thông tin bắt buộc');
+    if (!firstName.trim() || !lastName.trim() || !email.trim() || !username.trim()) {
+      Alert.alert('Lỗi', 'Vui lòng điền đầy đủ các trường bắt buộc');
+      return;
+    }
+    if (!validateEmail(email)) {
+      Alert.alert('Lỗi', 'Email không hợp lệ');
       return;
     }
 
     setLoading(true);
-    try {
-      // Gọi API cập nhật, ví dụ user.js có hàm updateUser
-      const res = await updateUser(userToken, {
-        first_name: firstName,
-        last_name: lastName,
-        email,
-        phone_number: phone,
-      });
 
-      if (res.success) {
-        Alert.alert('Thành công', 'Cập nhật thông tin cá nhân thành công');
-        // Có thể cập nhật lại userInfo trong context nếu muốn
-        navigation.goBack();
+    try {
+      const dataToUpdate = {
+        avatar,
+        first_name: firstName.trim(),
+        last_name: lastName.trim(),
+        username: username.trim(),
+        email: email.trim(),
+      };
+      console.log('dataToUpdate', dataToUpdate)
+
+      const res = await updateUser(userToken, dataToUpdate);
+      console.log('res', res)
+      // Kiểm tra thành công: nếu có username hoặc id trả về là ổn
+      if (res && (res.username || res.id)) {
+
+        Alert.alert('Thành công', 'Cập nhật thông tin thành công');
+        // Cập nhật context user với dữ liệu mới từ server
+        updateUserInfoInContext(res);
+        // navigation.goBack();
       } else {
-        Alert.alert('Lỗi', res.message || 'Cập nhật thất bại');
+        Alert.alert('Lỗi', 'Cập nhật thất bại');
       }
     } catch (error) {
       Alert.alert('Lỗi', error.message || 'Có lỗi xảy ra');
     }
+
     setLoading(false);
   };
 
@@ -55,13 +94,23 @@ export default function ProfileEditScreen({ navigation }) {
     <KeyboardAvoidingView
       style={{ flex: 1, backgroundColor: '#f7f9ff' }}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={80}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
     >
-      <ScrollView contentContainerStyle={styles.container}>
+      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         <Text style={styles.heading}>Chỉnh sửa thông tin cá nhân</Text>
 
+        <TouchableOpacity style={styles.avatarContainer} onPress={pickImage}>
+          {avatar ? (
+            <Image source={{ uri: avatar }} style={styles.avatar} />
+          ) : (
+            <View style={styles.avatarPlaceholder}>
+              <Text style={styles.avatarPlaceholderText}>Chọn ảnh</Text>
+            </View>
+          )}
+        </TouchableOpacity>
+
         <View style={styles.formGroup}>
-          <Text style={styles.label}>Họ</Text>
+          <Text style={styles.label}>Họ *</Text>
           <TextInput
             style={styles.input}
             value={firstName}
@@ -72,7 +121,7 @@ export default function ProfileEditScreen({ navigation }) {
         </View>
 
         <View style={styles.formGroup}>
-          <Text style={styles.label}>Tên</Text>
+          <Text style={styles.label}>Tên *</Text>
           <TextInput
             style={styles.input}
             value={lastName}
@@ -83,7 +132,19 @@ export default function ProfileEditScreen({ navigation }) {
         </View>
 
         <View style={styles.formGroup}>
-          <Text style={styles.label}>Email</Text>
+          <Text style={styles.label}>Tên đăng nhập *</Text>
+          <TextInput
+            style={styles.input}
+            value={username}
+            onChangeText={setUsername}
+            placeholder="Nhập username"
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+        </View>
+
+        <View style={styles.formGroup}>
+          <Text style={styles.label}>Email *</Text>
           <TextInput
             style={styles.input}
             value={email}
@@ -91,17 +152,7 @@ export default function ProfileEditScreen({ navigation }) {
             placeholder="Nhập email"
             keyboardType="email-address"
             autoCapitalize="none"
-          />
-        </View>
-
-        <View style={styles.formGroup}>
-          <Text style={styles.label}>Số điện thoại</Text>
-          <TextInput
-            style={styles.input}
-            value={phone}
-            onChangeText={setPhone}
-            placeholder="Nhập số điện thoại"
-            keyboardType="phone-pad"
+            autoCorrect={false}
           />
         </View>
 
@@ -110,7 +161,11 @@ export default function ProfileEditScreen({ navigation }) {
           onPress={handleUpdate}
           disabled={loading}
         >
-          <Text style={styles.buttonText}>{loading ? 'Đang cập nhật...' : 'Cập nhật'}</Text>
+          {loading ? (
+            <ActivityIndicator size="small" color="#fff" />
+          ) : (
+            <Text style={styles.buttonText}>Cập nhật</Text>
+          )}
         </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -119,48 +174,69 @@ export default function ProfileEditScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: {
-    padding: 20,
-    paddingTop: 40,
+    padding: 24,
     paddingBottom: 40,
+    backgroundColor: '#f7f9ff',
   },
   heading: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: '700',
-    marginBottom: 30,
+    marginBottom: 32,
     color: '#004aad',
     textAlign: 'center',
+  },
+  avatarContainer: {
+    alignSelf: 'center',
+    marginBottom: 28,
+  },
+  avatar: {
+    width: 110,
+    height: 110,
+    borderRadius: 55,
+  },
+  avatarPlaceholder: {
+    width: 110,
+    height: 110,
+    borderRadius: 55,
+    backgroundColor: '#d6dde8',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  avatarPlaceholderText: {
+    color: '#7a869a',
+    fontWeight: '600',
   },
   formGroup: {
     marginBottom: 20,
   },
   label: {
     fontWeight: '600',
-    fontSize: 14,
-    marginBottom: 8,
+    fontSize: 15,
+    marginBottom: 10,
     color: '#333',
   },
   input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    paddingHorizontal: 15,
-    paddingVertical: 12,
-    fontSize: 16,
     backgroundColor: '#fff',
+    borderRadius: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    fontSize: 16,
+    borderWidth: 1,
+    borderColor: '#ccd3e0',
   },
   button: {
     backgroundColor: '#004aad',
-    paddingVertical: 15,
+    paddingVertical: 16,
     borderRadius: 30,
+    marginTop: 30,
     alignItems: 'center',
-    marginTop: 20,
   },
   buttonDisabled: {
     backgroundColor: '#7a9cd9',
   },
   buttonText: {
     color: '#fff',
-    fontSize: 18,
     fontWeight: '700',
+    fontSize: 18,
   },
 });
