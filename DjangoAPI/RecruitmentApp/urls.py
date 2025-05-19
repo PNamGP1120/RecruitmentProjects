@@ -1,6 +1,15 @@
+
+from .views import (
+    RegisterView, UserUpdateView, JobSeekerRegisterView, RecruiterRegisterView,
+    AdminApproveRecruiterView, AdminAssignAdminRoleView, LoginView, CurrentUserView,
+    RoleListView, SwitchRoleView, JobSeekerProfileView, RecruiterProfileView, UpdateRecruiterProfileView,
+    CVListCreateView, CVUpdateView, CVSoftDeleteView, CVSetDefaultView
+)
+
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from rest_framework_nested import routers
+
 
 from .views import RegisterView, LoginView, UserDetailUpdateView, CurrentUserView, RoleListView, JobSeekerRegisterView, \
     RecruiterRegisterView, AdminApproveRecruiterView, AdminAssignAdminRoleView, SwitchRoleView, JobPostingViewSet, \
@@ -26,6 +35,15 @@ urlpatterns = [
     path('admin/user-roles/approve/', AdminApproveRecruiterView.as_view(), name='admin-approve-recruiter'),
     path('admin/user-roles/assign-admin/', AdminAssignAdminRoleView.as_view(), name='admin-assign-admin'),
     path('auth/switch-role/', SwitchRoleView.as_view(), name='switch-role'),
+
+    path('jobseeker/profile/', JobSeekerProfileView.as_view(), name='job-seeker-profile'),
+    path('recruiter/profile/', RecruiterProfileView.as_view(), name='recruiter-profile'),
+    path('recruiter/profile/update/', UpdateRecruiterProfileView.as_view(), name='recruiter-profile-update'),
+    path('jobseeker/cvs/', CVListCreateView.as_view(), name='cv-list-create'),
+    path('jobseeker/cvs/<int:pk>/update/', CVUpdateView.as_view(), name='cv-update'),
+    path('jobseeker/cvs/delete/', CVSoftDeleteView.as_view(), name='cv-delete'),
+    path('jobseeker/cvs/<int:cv_id>/set-default/', CVSetDefaultView.as_view(), name='cv-set-default'),
+
     path('messages/<int:pk>/', MessageViewSet.as_view({'put': 'update'}), name='message-update'),
 
 ]

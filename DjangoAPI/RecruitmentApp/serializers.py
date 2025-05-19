@@ -4,9 +4,13 @@ from difflib import SequenceMatcher
 from django.utils import timezone
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
+
+from rest_framework.exceptions import PermissionDenied
+
 from django.contrib.auth.password_validation import validate_password
 
 from .models import UserRole, Role, RecruiterProfile, JobSeekerProfile, Skill, JobPosting, Conversation, Message
+
 
 User = get_user_model()
 
@@ -286,5 +290,85 @@ class MessageSerializer(serializers.ModelSerializer):
                 instance.read_at = None  # Nếu không phải là đã đọc, set read_at = None
 
         # Cập nhật các trường khác
+        return super().update(instance, validated_data)
+
+
+class SwitchRoleSerializer(serializers.Serializer):
+    role_name = serializers.CharField()
+
+class JobSeekerProfileSerializer(serializers.ModelSerializer):
+    skills = serializers.SlugRelatedField(
+        many=True,
+        read_only=True,
+        slug_field='name'
+    )
+
+    class Meta:
+        model = JobSeekerProfile
+        fields = ['summary','experience','education',
+                  'phone_number','date_of_birth','gender','skills']
+
+class RecruiterProfileSerializer(serializers.ModelSerializer):
+    company_logo_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = RecruiterProfile
+        fields = ['company_name', 'company_website',
+                  'address', 'industry', 'company_description', 'company_logo_url']
+
+    @staticmethod
+    def get_company_logo_url(obj):
+        if obj.company_logo:
+            return obj.company_logo.url
+        return None
+
+class CVSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CV
+        fields = ['file_name', 'file_path', 'version_name', 'is_default']
+
+    def create(self, validated_data):
+        user = self.context['request'].user
+
+        # Lấy hồ sơ JobSeekerProfile từ user
+        # Phòng khi user không phải là JobSeeker (ví dụ là Recruiter) → để kiểm soát lỗi.
+        job_seeker_profile = getattr(user, 'job_seeker_profile', None)
+        if not job_seeker_profile:
+            raise serializers.ValidationError("User không có hồ sơ người tìm việc.")
+
+        # Gán profile cho CV mới để liên kết giữa CV và người dùng
+        validated_data['job_seeker_profile'] = job_seeker_profile
+
+        # Nếu is_default=True, tắt mặc định cho các CV còn lại
+        if validated_data.get('is_default', False):
+            CV.objects.filter(job_seeker_profile=job_seeker_profile, is_default=True).update(is_default=False)
+
+        return super().create(validated_data)
+
+    def to_representation(self, instance):
+        rep = super().to_representation(instance)
+        rep['file_path'] = instance.file_path.url if instance.file_path else None
+        return rep
+
+class CVUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CV
+        fields = ['file_name', 'version_name', 'is_default']
+
+    def update(self, instance, validated_data):
+        user = self.context['request'].user
+
+        # Kiểm tra quyền sở hữu
+        job_seeker_profile = getattr(user, 'job_seeker_profile', None)
+        if not job_seeker_profile or instance.job_seeker_profile != job_seeker_profile:
+            raise PermissionDenied("You do not have permission to update this CV.")
+
+        # Nếu cập nhật is_default=True thì các CV khác phải tắt
+        if validated_data.get('is_default', False):
+            CV.objects.filter(
+                job_seeker_profile=job_seeker_profile,
+                is_default=True
+            ).exclude(id=instance.id).update(is_default=False)
+
         return super().update(instance, validated_data)
 
