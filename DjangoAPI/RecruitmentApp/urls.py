@@ -5,7 +5,8 @@ from .views import (
     RegisterView, UserUpdateView, JobSeekerRegisterView, RecruiterRegisterView,
     AdminApproveRecruiterView, AdminAssignAdminRoleView, LoginView, CurrentUserView,
     RoleListView, SwitchRoleView, JobSeekerProfileView, RecruiterProfileView, UpdateRecruiterProfileView,
-    CVListCreateView, CVUpdateView, CVSoftDeleteView, CVSetDefaultView
+    CVListCreateView, CVUpdateView, CVSoftDeleteView, CVSetDefaultView, MessageViewSet, JobPostingViewSet,
+    ConversationViewSet
 )
 
 router = DefaultRouter()
