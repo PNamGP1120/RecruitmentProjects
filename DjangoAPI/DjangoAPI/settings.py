@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'corsheaders',
     'drf_yasg',
+    'channels',
 ]
 
 MIDDLEWARE = [
@@ -74,6 +75,8 @@ TEMPLATES = [
         },
     },
 ]
+
+ASGI_APPLICATION = 'DjangoAPI.asgi.application'
 
 WSGI_APPLICATION = 'DjangoAPI.wsgi.application'
 
@@ -192,4 +195,14 @@ CORS_ALLOWED_ORIGINS = [
     'http://*',
     'https://*',
 ]
+
+# settings.py
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [('127.0.0.1', 6379)],
+        },
+    },
+}
 

@@ -1,16 +1,54 @@
-// src/screens/Common/ChatScreen.js
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+// src/screens/Recruiter/ChatScreen.js
 
-export default function ChatScreen() {
+import React, { useState, useEffect, useContext } from "react";
+import { View, Text, TextInput, Button, FlatList } from "react-native";
+import { sendMessage, listenForMessages } from "../../api/firebaseService"; // Sử dụng Firebase service
+import { AuthContext } from "../../contexts/AuthContext"; // Để lấy thông tin người dùng
+
+const ChatScreen = ({ conversationId }) => {
+  const [messages, setMessages] = useState([]);
+  const [messageContent, setMessageContent] = useState("");
+  const { user } = useContext(AuthContext); // Lấy thông tin người dùng
+
+  useEffect(() => {
+    // Lắng nghe tin nhắn mới trong cuộc hội thoại
+    listenForMessages(conversationId, (newMessage) => {
+      setMessages((prevMessages) => [...prevMessages, newMessage]);
+    });
+
+    return () => {
+      // Cleanup khi component unmount
+    };
+  }, [conversationId]);
+
+  const handleSendMessage = () => {
+    if (messageContent.trim()) {
+      sendMessage(conversationId, user.id, messageContent); // Gửi tin nhắn
+      setMessageContent(""); // Reset input field
+    }
+  };
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.text}>Chat thời gian thực</Text>
+    <View>
+      <FlatList
+        data={messages}
+        renderItem={({ item }) => (
+          <View>
+            <Text>{item.senderId}: {item.content}</Text>
+          </View>
+        )}
+        keyExtractor={(item, index) => index.toString()}
+      />
+
+      <TextInput
+        value={messageContent}
+        onChangeText={setMessageContent}
+        placeholder="Type a message"
+      />
+
+      <Button title="Send" onPress={handleSendMessage} />
     </View>
   );
-}
+};
 
-const styles = StyleSheet.create({
-  container: { flex:1, justifyContent:'center', alignItems:'center' },
-  text: { fontSize: 24, fontWeight: 'bold' },
-});
+export default ChatScreen;
