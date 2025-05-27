@@ -8,7 +8,8 @@ from django.contrib.auth import get_user_model
 
 from rest_framework.exceptions import PermissionDenied
 
-from .models import Role, UserRole, JobSeekerProfile, RecruiterProfile, Skill, CV, JobPosting, Message, Conversation
+from .models import Role, UserRole, JobSeekerProfile, RecruiterProfile, Skill, CV, JobPosting, Message, Conversation, \
+    Application
 
 User = get_user_model()
 
@@ -369,3 +370,15 @@ class CVUpdateSerializer(serializers.ModelSerializer):
             ).exclude(id=instance.id).update(is_default=False)
 
         return super().update(instance, validated_data)
+
+class ApplicationSerializer(serializers.ModelSerializer):
+    job_posting_title = serializers.CharField(source='job_posting.title', read_only=True)
+    job_seeker_username = serializers.CharField(source='my_user.username', read_only=True)
+    cv_url = serializers.CharField(source='cv.file_path.url', read_only=True, allow_null=True)
+    recruiter_company = serializers.CharField(source='job_posting.recruiter_profile.company_name', read_only=True)
+
+    class Meta:
+        model = Application
+        fields = ['id', 'my_user', 'job_posting', 'cv', 'status', 'cover_letter', 'created_at',
+                 'updated_at', 'job_posting_title', 'job_seeker_username', 'cv_url', 'recruiter_company']
+        read_only_fields = ['id', 'created_at', 'updated_at', 'my_user']

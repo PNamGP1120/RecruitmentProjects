@@ -1,7 +1,7 @@
 from django.db import models
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from rest_framework import generics, status, serializers
+from rest_framework import generics, status, serializers, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied, NotFound
 from rest_framework.parsers import MultiPartParser, FormParser
@@ -12,15 +12,18 @@ from django.contrib.auth import get_user_model, authenticate
 from rest_framework.viewsets import ModelViewSet
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from .permissions import IsAuthenticated, AllowAnyUser, IsAdmin, IsJobSeeker, IsRecruiterWithProfile, IsSuperAdmin
-from .models import Role, UserRole, JobSeekerProfile, RecruiterProfile, CV, MyUser, JobPosting, Conversation, Message
+from .permissions import IsAuthenticated, AllowAnyUser, IsAdmin, IsJobSeeker, IsRecruiterWithProfile, IsSuperAdmin, \
+    IsRecruiter
+from .models import Role, UserRole, JobSeekerProfile, RecruiterProfile, CV, MyUser, JobPosting, Conversation, Message, \
+    Application
 from .permissions import IsAdmin
 from .serializers import (
     RegisterSerializer, UserUpdateSerializer, JobSeekerRegisterSerializer,
     RecruiterRegisterSerializer, RoleSerializer, UserRoleApproveSerializer,
     SwitchRoleSerializer, JobSeekerProfileSerializer, RecruiterProfileSerializer, CVSerializer, CVUpdateSerializer,
     LoginSerializer, CurrentUserSerializer, AdminApproveRecruiterSerializer, JobPostingCreateUpdateSerializer,
-    JobPostingSerializer, AdminAssignAdminRoleSerializer, ConversationSerializer, MessageSerializer
+    JobPostingSerializer, AdminAssignAdminRoleSerializer, ConversationSerializer, MessageSerializer,
+    ApplicationSerializer
 )
 from rest_framework_simplejwt.views import TokenObtainPairView
 
@@ -538,3 +541,138 @@ class CVSetDefaultView(APIView):
         cv.save()
 
         return Response({"message": "Cập nhật thành công: CV đã trở thành mặc định."}, status=status.HTTP_200_OK)
+
+class ApplicationViewSet(viewsets.ModelViewSet):
+    serializer_class = ApplicationSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.active_role and user.active_role.role_name == 'Recruiter' and user.user_roles.filter(
+            role__role_name='Recruiter', is_approved=True
+        ).exists():
+            # Recruiters see applications for their job postings
+            return Application.objects.filter(
+                job_posting__recruiter_profile__my_user=user
+            ).select_related('my_user', 'job_posting', 'cv', 'job_posting__recruiter_profile')
+        elif user.active_role and user.active_role.role_name == 'JobSeeker' and user.user_roles.filter(
+            role__role_name='JobSeeker', is_approved=True
+        ).exists():
+            # Job seekers see their own applications
+            return Application.objects.filter(
+                my_user=user
+            ).select_related('my_user', 'job_posting', 'cv', 'job_posting__recruiter_profile')
+        return Application.objects.none()
+
+    def get_permissions(self):
+        if self.action in ['create', 'withdraw']:
+            return [IsJobSeeker()]
+        elif self.action == 'update_status':
+            return [IsRecruiter()]
+        elif self.action == 'list':
+            return [IsAuthenticated()]
+        return super().get_permissions()
+
+    def create(self, request, *args, **kwargs):
+        """
+        API: Create a new job application (Job Seeker only)
+        URL: /api/applications/
+        Method: POST
+        Request: {
+            "job_posting": "uuid-of-job-posting",
+            "cv": "id-of-cv",
+            "cover_letter": "Optional cover letter text"
+        }
+        Response: {
+            "id": "uuid",
+            "job_posting": "uuid",
+            "job_posting_title": "Job title",
+            "job_seeker_username": "username",
+            "cv": "cv-id",
+            "cv_url": "url-to-cv",
+            "recruiter_company": "company name",
+            "status": "Applied",
+            "cover_letter": "text",
+            "created_at": "datetime",
+            "updated_at": "datetime"
+        }
+        """
+        job_posting_id = request.data.get('job_posting')
+        cv_id = request.data.get('cv')
+        cover_letter = request.data.get('cover_letter', '')
+
+        try:
+            job_posting = JobPosting.objects.get(id=job_posting_id, is_active=True, status='approved')
+            cv = CV.objects.get(id=cv_id, job_seeker_profile__my_user=request.user, is_deleted=False)
+        except JobPosting.DoesNotExist:
+            return Response({"error": "Job posting not found or not active"}, status=status.HTTP_404_NOT_FOUND)
+        except CV.DoesNotExist:
+            return Response({"error": "CV not found or not owned by user"}, status=status.HTTP_404_NOT_FOUND)
+
+        # Check if user already applied
+        if Application.objects.filter(my_user=request.user, job_posting=job_posting).exists():
+            return Response({"error": "You have already applied to this job"}, status=status.HTTP_400_BAD_REQUEST)
+
+        application = Application.objects.create(
+            my_user=request.user,
+            job_posting=job_posting,
+            cv=cv,
+            cover_letter=cover_letter,
+            status='Applied'
+        )
+        serializer = self.get_serializer(application)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=['patch'], url_path='update-status')
+    def update_status(self, request, pk=None):
+        """
+        API: Update application status (Recruiter only)
+        URL: /api/applications/<id>/update-status/
+        Method: PATCH
+        Request: {
+            "status": "Viewed|Interviewing|Offered|Rejected"
+        }
+        Response: {
+            "id": "uuid",
+            "status": "new-status",
+            ...
+        }
+        """
+        application = get_object_or_404(Application, pk=pk)
+        if application.job_posting.recruiter_profile.my_user != request.user:
+            return Response({"error": "Not authorized to update this application"}, status=status.HTTP_403_FORBIDDEN)
+
+        status_value = request.data.get('status')
+        valid_statuses = [choice[0] for choice in Application.STATUS_CHOICES if choice[0] != 'Withdrawn']
+        if status_value not in valid_statuses:
+            return Response({"error": "Invalid status"}, status=status.HTTP_400_BAD_REQUEST)
+
+        application.status = status_value
+        application.save()
+        serializer = self.get_serializer(application)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=['patch'], url_path='withdraw')
+    def withdraw(self, request, pk=None):
+        """
+        API: Withdraw application (Job Seeker only)
+        URL: /api/applications/<id>/withdraw/
+        Method: PATCH
+        Request: {}
+        Response: {
+            "id": "uuid",
+            "status": "Withdrawn",
+            ...
+        }
+        """
+        application = get_object_or_404(Application, pk=pk)
+        if application.my_user != request.user:
+            return Response({"error": "Not authorized to withdraw this application"}, status=status.HTTP_403_FORBIDDEN)
+
+        if application.status == 'Withdrawn':
+            return Response({"error": "Application already withdrawn"}, status=status.HTTP_400_BAD_REQUEST)
+
+        application.status = 'Withdrawn'
+        application.save()
+        serializer = self.get_serializer(application)
+        return Response(serializer.data)
