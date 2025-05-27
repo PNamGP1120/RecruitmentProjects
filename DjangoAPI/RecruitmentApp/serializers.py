@@ -214,17 +214,18 @@ class SwitchRoleSerializer(serializers.Serializer):
     role_name = serializers.CharField(max_length=50)
 
 class JobPostingSerializer(serializers.ModelSerializer):
-    recruiter_name = serializers.CharField(source='recruiter_profile.company_name', read_only=True)
-    recruiter_logo_url = serializers.SerializerMethodField()
+    company_name = serializers.CharField(source='recruiter_profile.company_name', read_only=True)
+    company_logo = serializers.CharField(source='recruiter_profile.company_logo.url', read_only=True, allow_null=True)
+    recruiter_username = serializers.CharField(source='recruiter_profile.my_user.username', read_only=True)
 
     class Meta:
         model = JobPosting
         fields = [
-            'id', 'slug', 'title', 'description', 'location', 'salary_min', 'salary_max',
-            'job_type', 'status', 'is_active', 'expiration_date',
-            'recruiter_name', 'recruiter_logo_url'
+            'id', 'title', 'slug', 'description', 'location', 'salary_min', 'salary_max',
+            'experience_required', 'job_type', 'is_active', 'expiration_date', 'status',
+            'created_at', 'updated_at', 'company_name', 'company_logo', 'recruiter_username'
         ]
-        read_only_fields = ['id', 'slug', 'status', 'is_active', 'recruiter_name', 'recruiter_logo_url']
+        read_only_fields = ['id', 'slug', 'created_at', 'updated_at', 'status', 'is_active']
 
     def get_recruiter_logo_url(self, obj):
         if obj.recruiter_profile.company_logo:

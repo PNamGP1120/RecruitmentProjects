@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import generics, status, serializers, viewsets
@@ -675,4 +676,159 @@ class ApplicationViewSet(viewsets.ModelViewSet):
         application.status = 'Withdrawn'
         application.save()
         serializer = self.get_serializer(application)
+        return Response(serializer.data)
+
+class JobPostingEveryoneViewSet(viewsets.ModelViewSet):
+    serializer_class = JobPostingSerializer
+    permission_classes = [AllowAnyUser]  # Allow everyone to access list and detail
+
+    def get_queryset(self):
+        # Only return approved and active job postings
+        queryset = JobPosting.objects.filter(
+            is_active=True,
+            status='approved',
+            expiration_date__gt=timezone.now()
+        ).select_related('recruiter_profile', 'recruiter_profile__my_user')
+        return queryset
+
+    def list(self, request, *args, **kwargs):
+        """
+        API: List and filter job postings
+        URL: /api/jobs/
+        Method: GET
+        Request Query Params: {
+            "keyword": "search term",
+            "location": "city or region",
+            "salary_min": float,
+            "salary_max": float,
+            "job_type": "Full-time|Part-time|Freelance|Internship",
+            "company": "company name"
+        }
+        Response: [
+            {
+                "id": "uuid",
+                "title": "Job title",
+                "slug": "job-slug",
+                "description": "Job description",
+                "location": "Location",
+                "salary_min": float,
+                "salary_max": float,
+                "experience_required": "Experience",
+                "job_type": "Full-time|Part-time|Freelance|Internship",
+                "is_active": true,
+                "expiration_date": "datetime",
+                "status": "approved",
+                "created_at": "datetime",
+                "updated_at": "datetime",
+                "company_name": "Company name",
+                "company_logo": "url-to-logo",
+                "recruiter_username": "username"
+            },
+            ...
+        ]
+        """
+        queryset = self.get_queryset()
+        keyword = request.query_params.get('keyword')
+        location = request.query_params.get('location')
+        salary_min = request.query_params.get('salary_min')
+        salary_max = request.query_params.get('salary_max')
+        job_type = request.query_params.get('job_type')
+        company = request.query_params.get('company')
+
+        if keyword:
+            queryset = queryset.filter(
+                Q(title__icontains=keyword) | Q(description__icontains=keyword)
+            )
+
+        if location:
+            queryset = queryset.filter(location__icontains=location)
+
+        if salary_min:
+            try:
+                queryset = queryset.filter(salary_min__gte=float(salary_min))
+            except ValueError:
+                return Response({"error": "Invalid salary_min value"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if salary_max:
+            try:
+                queryset = queryset.filter(salary_max__lte=float(salary_max))
+            except ValueError:
+                return Response({"error": "Invalid salary_max value"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if job_type and job_type in [choice[0] for choice in JobPosting.JOB_TYPE_CHOICES]:
+            queryset = queryset.filter(job_type=job_type)
+
+        if company:
+            queryset = queryset.filter(recruiter_profile__company_name__icontains=company)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+    def retrieve(self, request, *args, **kwargs):
+        """
+        API: Get details of a specific job posting
+        URL: /api/jobs/<id>/
+        Method: GET
+        Request: None
+        Response: {
+            "id": "uuid",
+            "title": "Job title",
+            "slug": "job-slug",
+            "description": "Job description",
+            "location": "Location",
+            "salary_min": float,
+            "salary_max": float,
+            "experience_required": "Experience",
+            "job_type": "Full-time|Part-time|Freelance|Internship",
+            "is_active": true,
+            "expiration_date": "datetime",
+            "status": "approved",
+            "created_at": "datetime",
+            "updated_at": "datetime",
+            "company_name": "Company name",
+            "company_logo": "url-to-logo",
+            "recruiter_username": "username"
+        }
+        """
+        return super().retrieve(request, *args, **kwargs)
+
+    @action(detail=False, methods=['get'], permission_classes=[IsJobSeeker], url_path='recommended')
+    def recommended(self, request):
+        """
+        API: Get recommended jobs based on JobSeeker profile
+        URL: /api/jobs/recommended/
+        Method: GET
+        Request: None
+        Response: [
+            {
+                "id": "uuid",
+                "title": "Job title",
+                "slug": "job-slug",
+                ...
+            },
+            ...
+        ]
+        """
+        try:
+            profile = JobSeekerProfile.objects.get(my_user=request.user)
+        except JobSeekerProfile.DoesNotExist:
+            return Response({"error": "Job seeker profile not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        queryset = self.get_queryset()
+        skills = profile.skills.values_list('name', flat=True)
+        experience = profile.experience or ''
+        education = profile.education or ''
+
+        # MySQL-compatible filtering for recommendations
+        query = Q()
+        for skill in skills:
+            query |= Q(title__icontains=skill) | Q(description__icontains=skill) | Q(experience_required__icontains=skill)
+        if experience:
+            query |= Q(description__icontains=experience) | Q(experience_required__icontains=experience)
+        if education:
+            query |= Q(description__icontains=education)
+
+        queryset = queryset.filter(query).order_by('-created_at')[:10]  # Limit to top 10 recent matches
+
+        serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)

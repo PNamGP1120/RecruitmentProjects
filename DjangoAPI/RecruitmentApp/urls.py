@@ -6,7 +6,7 @@ from .views import (
     AdminApproveRecruiterView, AdminAssignAdminRoleView, LoginView, CurrentUserView,
     RoleListView, SwitchRoleView, JobSeekerProfileView, RecruiterProfileView, UpdateRecruiterProfileView,
     CVListCreateView, CVUpdateView, CVSoftDeleteView, CVSetDefaultView, MessageViewSet, JobPostingViewSet,
-    ConversationViewSet, ApplicationViewSet
+    ConversationViewSet, ApplicationViewSet, JobPostingEveryoneViewSet
 )
 
 router = DefaultRouter()
@@ -15,6 +15,7 @@ router.register(r'conversations', ConversationViewSet)
 router.register(r'conversations/(?P<conversation_id>\d+)/messages', MessageViewSet)
 # router.register(r'messages', MessageViewSet, basename="messages")
 router.register(r'applications', ApplicationViewSet, basename='application')
+router.register(r'jobs', JobPostingEveryoneViewSet, basename='job')
 
 urlpatterns = [
     path('', include(router.urls)),
