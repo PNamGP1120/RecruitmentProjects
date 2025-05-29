@@ -549,17 +549,13 @@ class ApplicationViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        if user.active_role and user.active_role.role_name == 'Recruiter' and user.user_roles.filter(
-            role__role_name='Recruiter', is_approved=True
-        ).exists():
+        if IsRecruiter().has_permission(self.request, self):
             # Recruiters see applications for their job postings
             return Application.objects.filter(
                 job_posting__recruiter_profile__my_user=user
             ).select_related('my_user', 'job_posting', 'cv', 'job_posting__recruiter_profile')
-        elif user.active_role and user.active_role.role_name == 'JobSeeker' and user.user_roles.filter(
-            role__role_name='JobSeeker', is_approved=True
-        ).exists():
-            # Job seekers see their own applications
+        elif IsJobSeeker().has_permission(self.request, self):
+        # Job seekers see their own applications
             return Application.objects.filter(
                 my_user=user
             ).select_related('my_user', 'job_posting', 'cv', 'job_posting__recruiter_profile')
@@ -681,6 +677,8 @@ class ApplicationViewSet(viewsets.ModelViewSet):
 class JobPostingEveryoneViewSet(viewsets.ModelViewSet):
     serializer_class = JobPostingSerializer
     permission_classes = [AllowAnyUser]  # Allow everyone to access list and detail
+    lookup_field = 'slug'  # Use slug for retrieving job details
+    lookup_url_kwarg = 'slug'  # Match URL kwarg to slug
 
     def get_queryset(self):
         # Only return approved and active job postings
@@ -767,7 +765,7 @@ class JobPostingEveryoneViewSet(viewsets.ModelViewSet):
     def retrieve(self, request, *args, **kwargs):
         """
         API: Get details of a specific job posting
-        URL: /api/jobs/<id>/
+        URL: /api/jobs/<slug>/
         Method: GET
         Request: None
         Response: {
