@@ -5,8 +5,8 @@ urlpatterns = [
     path('admin/', admin.site.urls),
 
     # # các api app
-    # path('api/auth/', include('AuthApp.urls')),
-    # path('api/jobs/', include('JobApp.urls')),
+    path('auth/', include('AuthApp.urls')),
+    path('', include('JobApp.urls')),
     # path('api/profile/', include('ProfileApp.urls')),
     # path('api/application/', include('ApplicationApp.urls')),
     # path('api/chat/', include('ChatApp.urls')),
