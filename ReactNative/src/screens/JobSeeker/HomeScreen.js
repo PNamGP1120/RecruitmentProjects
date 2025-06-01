@@ -160,13 +160,13 @@ export default function JobSeekerHome({ navigation }) {
 
       {/* Search Bar */}
       <View style={styles.searchContainer}>
-        <Ionicons name="search" size={20} color="gray" />
-        <Text style={styles.searchPlaceholder}>Search a job or position</Text>
         <TouchableOpacity
           style={styles.filterButton}
-          onPress={() => alert('Filter clicked')}
+          onPress={() => navigation.navigate('JobSearch')}
         >
-          <Ionicons name="options-outline" size={24} color="#555" />
+          <Ionicons name="search" size={20} color="gray" />
+          <Text style={styles.searchPlaceholder}>Search a job or position</Text>
+          {/* <Ionicons name="options-outline" size={24} color="#555" /> */}
         </TouchableOpacity>
       </View>
 
@@ -256,7 +256,7 @@ const styles = StyleSheet.create({
     marginBottom: 30,
   },
   searchPlaceholder: {
-    flex: 1,
+    // flex: 1,
     marginLeft: 12,
     color: '#adb5bd',
     fontSize: 16,
@@ -264,6 +264,7 @@ const styles = StyleSheet.create({
   },
   filterButton: {
     paddingHorizontal: 10,
+    flexDirection: 'row',
   },
   jobsSectionHeader: {
     flexDirection: 'row',
@@ -373,4 +374,3 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
 });
-

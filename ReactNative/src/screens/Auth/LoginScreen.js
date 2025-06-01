@@ -33,6 +33,7 @@ export default function LoginScreen({navigation}) {
         setLoading(true);
         try {
             await signIn(username, password);
+            console.log('Đăng nhập thành công');
         } catch (error) {
             Alert.alert('Đăng nhập thất bại', error.message);
         } finally {
@@ -42,22 +43,29 @@ export default function LoginScreen({navigation}) {
 
     useEffect(() => {
         console.log(userInfo)
-        // if (userInfo?.active_role) {
-        //     switch (userInfo.active_role) {
-        //         case 'JobSeeker':
-        //             navigation.reset({index: 0, routes: [{name: 'JobSeekerHome'}]});
-        //             break;
-        //         case 'Recruiter':
-        //             navigation.reset({index: 0, routes: [{name: 'RecruiterHome'}]});
-        //             break;
-        //         case 'Admin':
-        //             navigation.reset({index: 0, routes: [{name: 'AdminDashboard'}]});
-        //             break;
-        //         default:
-        //             navigation.reset({index: 0, routes: [{name: 'Start'}]});
-        //             break;
-        //     }
-        // }
+        if (userInfo?.active_role) {
+            let targetScreen;
+            switch (userInfo.active_role) {
+                case 'JobSeeker':
+                    targetScreen = 'JobSeekerHome';
+                    break;
+                case 'Recruiter':
+                    targetScreen = 'RecruiterHome';
+                    break;
+                case 'Admin':
+                    targetScreen = 'AdminDashboard';
+                    break;
+                default:
+                    targetScreen = 'Start';
+                    break;
+            }
+
+            // Reset navigation stack to prevent going back to login
+            navigation.reset({
+                index: 0,
+                routes: [{ name: targetScreen }],
+            });
+        }
     }, [userInfo]);
 
 

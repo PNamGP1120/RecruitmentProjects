@@ -28,12 +28,11 @@ export default function JobSeekerTabNavigator() {
       })}
     >
       <Tab.Screen name="Home" component={HomeScreen} options={{ tabBarLabel: 'Trang chủ' }} />
-      <Tab.Screen name="Jobs" component={JobSearchScreen} options={{ tabBarLabel: 'Tìm việc' }} />
+      {/* <Tab.Screen name="Jobs" component={JobSearchScreen} options={{ tabBarLabel: 'Tìm việc' }} /> */}
       {/* <Tab.Screen name="Conversations" component={ConversationsScreen} /> */}
       <Tab.Screen name="Messages" component={ConversationsScreen} options={{ tabBarLabel: 'Tin nhắn' }} />
       <Tab.Screen name="Profile" component={ProfileScreen} options={{ tabBarLabel: 'Tài khoản' }} />
 
     </Tab.Navigator>
   );
-
 }

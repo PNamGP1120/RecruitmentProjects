@@ -10,6 +10,7 @@ import ApplicationStatusScreen from '../screens/JobSeeker/ApplicationStatusScree
 import JobSearchScreen from '../screens/JobSeeker/JobSearchScreen';
 import ProfileEditScreen from "../screens/JobSeeker/ProfileEditScreen";
 import AboutScreen from "../screens/JobSeeker/AboutScreen";
+import SearchFilterJobsResultScreen from '../screens/JobSeeker/SearchFilterJobsResultScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -33,7 +34,7 @@ export default function JobSeekerStack() {
             <Stack.Screen name="JobSearch" component={JobSearchScreen}/>
             <Stack.Screen name="ProfileEdit" component={ProfileEditScreen} options={{title: 'Cập nhật hồ sơ'}}/>
             <Stack.Screen name="About" component={AboutScreen} options={{title: 'Về chúng tôi'}}/>
-
+            <Stack.Screen name="SearchFilterJobsResult" component={SearchFilterJobsResultScreen} options={{ headerShown: false }}/>
         </Stack.Navigator>
     );
 }
