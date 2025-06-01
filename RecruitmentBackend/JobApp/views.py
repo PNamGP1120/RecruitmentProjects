@@ -64,6 +64,30 @@ class JobPostingViewSet(viewsets.ModelViewSet):
             permission_classes = [IsAuthenticatedAndApproved]
         return [perm() for perm in permission_classes]
 
+    def get_queryset(self):
+        """
+        Lọc việc làm theo quyền của người dùng:
+        - Admin: Xem tất cả tin tuyển dụng
+        - Recruiter: Xem tin tuyển dụng của chính họ
+        - JobSeeker: Chỉ xem tin đã duyệt (Approved)
+        """
+        user = self.request.user
+
+        # Nếu user là admin
+        if user.is_superuser:
+            return JobPosting.objects.all()
+
+        # Nếu user là recruiter, chỉ xem việc làm của chính họ
+        elif hasattr(user, 'recruiter_profile'):
+            return JobPosting.objects.filter(recruiter_profile__user=user)
+
+        # Nếu user là job seeker, chỉ xem việc làm đã duyệt (Approved)
+        elif hasattr(user, 'job_seeker_profile'):
+            return JobPosting.objects.filter(status='Approved')
+
+        # Nếu không phải các vai trò trên, trả về rỗng
+        return JobPosting.objects.filter(status='Approved')
+
     def perform_create(self, serializer):
         recruiter_profile = getattr(self.request.user, 'recruiter_profile', None)
         if not recruiter_profile:

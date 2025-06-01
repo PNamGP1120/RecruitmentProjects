@@ -11,6 +11,6 @@ urlpatterns = [
     # path('api/profile/', include('ProfileApp.urls')),
     path('', include('ApplicationApp.urls')),
     # path('api/chat/', include('ChatApp.urls')),
-    # path('api/notification/', include('NotificationApp.urls')),
+    # path('', include('NotificationApp.urls')),
     # path('api/report/', include('ReportApp.urls')),
 ]
