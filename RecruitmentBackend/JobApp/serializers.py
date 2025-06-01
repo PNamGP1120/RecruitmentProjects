@@ -1,31 +1,29 @@
 from rest_framework import serializers
-from .models import RecruiterProfile, JobPosting, JobStatus
+from .models import RecruiterProfile, JobPosting, JobType, JobStatus
 
 class RecruiterProfileSerializer(serializers.ModelSerializer):
+    # Hiển thị username của user gán recruiter (read-only)
+    user = serializers.StringRelatedField(read_only=True)
+
     class Meta:
         model = RecruiterProfile
         fields = [
-            'id',
-            'company_name',
-            'company_website',
-            'company_description',
-            'industry',
-            'address',
-            'company_logo',
+            'id', 'user', 'company_name', 'company_website', 'company_description',
+            'industry', 'address', 'company_logo', 'created_at', 'updated_at'
         ]
+        read_only_fields = ['id', 'user', 'created_at', 'updated_at']
 
 
 class JobPostingSerializer(serializers.ModelSerializer):
     recruiter_profile = RecruiterProfileSerializer(read_only=True)
-    slug = serializers.ReadOnlyField()
-    status = serializers.CharField(read_only=True)  # Trạng thái do backend quản lý
+    recruiter_profile_id = serializers.UUIDField(write_only=True, required=False)
 
     class Meta:
         model = JobPosting
         fields = [
             'id',
-            'slug',
             'recruiter_profile',
+            'recruiter_profile_id',
             'title',
             'description',
             'requirements',
@@ -37,19 +35,39 @@ class JobPostingSerializer(serializers.ModelSerializer):
             'is_active',
             'expiration_date',
             'views_count',
+            'slug',
             'created_at',
-            'updated_at',
+            'updated_at'
         ]
         read_only_fields = [
-            'status', 'is_active', 'views_count', 'created_at', 'updated_at',
+            'id', 'recruiter_profile', 'status', 'is_active',
+            'views_count', 'slug', 'created_at', 'updated_at'
         ]
 
     def create(self, validated_data):
-        request = self.context.get('request')
-        recruiter_profile = getattr(request.user, 'recruiter_profile', None)
-        if not recruiter_profile:
-            raise serializers.ValidationError("Người dùng chưa có hồ sơ nhà tuyển dụng.")
-        validated_data['recruiter_profile'] = recruiter_profile
-        validated_data['status'] = JobStatus.DRAFT
-        validated_data['is_active'] = False
+        recruiter_profile_id = validated_data.pop('recruiter_profile_id', None)
+        if recruiter_profile_id:
+            validated_data['recruiter_profile_id'] = recruiter_profile_id
         return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        validated_data.pop('recruiter_profile_id', None)
+        return super().update(instance, validated_data)
+
+
+class JobTypeSerializer(serializers.Serializer):
+    value = serializers.CharField()
+    label = serializers.CharField()
+
+
+class JobStatusSerializer(serializers.Serializer):
+    value = serializers.CharField()
+    label = serializers.CharField()
+
+
+class JobPostingRecommendSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = JobPosting
+        fields = [
+            'id', 'title', 'location', 'salary_min', 'salary_max', 'job_type', 'slug'
+        ]

@@ -1,105 +1,177 @@
-from rest_framework import viewsets, status
-from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
+from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action
-from django.shortcuts import get_object_or_404
-from .models import RecruiterProfile, JobPosting, JobStatus
-from .serializers import RecruiterProfileSerializer, JobPostingSerializer
-from .permissions import IsRecruiter, IsAdmin, IsOwnerOrAdmin
+from rest_framework.response import Response
+from rest_framework.permissions import AllowAny
+from django_filters.rest_framework import DjangoFilterBackend
+from django.db.models import Q
+from .models import RecruiterProfile, JobPosting
+from .serializers import (
+    RecruiterProfileSerializer,
+    JobPostingSerializer,
+    JobPostingRecommendSerializer,
+    JobTypeSerializer,
+    JobStatusSerializer,
+)
+from .permissions import (
+    IsAdmin,
+    IsRecruiter,
+    IsJobSeeker,
+    IsAuthenticatedAndApproved,
+    IsOwnerOrAdmin,
+    IsRecruiterOwnerOrAdmin,
+)
 
 
-class RecruiterProfileView(APIView):
-    permission_classes = [IsAuthenticated, IsRecruiter]
+class RecruiterProfileViewSet(viewsets.ModelViewSet):
+    queryset = RecruiterProfile.objects.all()
+    serializer_class = RecruiterProfileSerializer
 
-    def get(self, request):
-        profile, _ = RecruiterProfile.objects.get_or_create(user=request.user)
-        serializer = RecruiterProfileSerializer(profile)
-        return Response(serializer.data)
+    def get_permissions(self):
+        if self.action == "list":
+            permission_classes = [IsAuthenticatedAndApproved & (IsAdmin | IsRecruiter)]
+        elif self.action in ["retrieve", "update", "partial_update", "destroy"]:
+            permission_classes = [IsOwnerOrAdmin]
+        elif self.action == "create":
+            permission_classes = [IsRecruiter]
+        else:
+            permission_classes = [IsAuthenticatedAndApproved]
+        return [perm() for perm in permission_classes]
 
-    def put(self, request):
-        profile, _ = RecruiterProfile.objects.get_or_create(user=request.user)
-        serializer = RecruiterProfileSerializer(profile, data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(serializer.data)
-
-    def patch(self, request):
-        profile, _ = RecruiterProfile.objects.get_or_create(user=request.user)
-        serializer = RecruiterProfileSerializer(profile, data=request.data, partial=True)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(serializer.data)
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
 
 
 class JobPostingViewSet(viewsets.ModelViewSet):
+    queryset = JobPosting.objects.all()
     serializer_class = JobPostingSerializer
-    lookup_field = 'slug'
-
-    def get_queryset(self):
-        user = self.request.user
-        queryset = JobPosting.objects.all()
-
-        # Lọc tin cho public chỉ xem tin đã duyệt và đang active
-        if not user.is_authenticated or not (
-            user.user_roles.filter(role__name='Recruiter', is_approved=True).exists() or
-            user.user_roles.filter(role__name='Admin', is_approved=True).exists()
-        ):
-            queryset = queryset.filter(status=JobStatus.APPROVED, is_active=True)
-
-        return queryset
+    lookup_field = 'slug'  # Sử dụng slug thay cho id
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['job_type', 'location', 'status']
+    search_fields = ['title', 'description', 'requirements', 'location']
+    ordering_fields = ['created_at', 'salary_min', 'views_count']
+    ordering = ['-created_at']
 
     def get_permissions(self):
-        if self.action in ['create', 'update', 'partial_update', 'destroy', 'submit_for_review', 'activate']:
-            permission_classes = [IsAuthenticated, IsRecruiter, IsOwnerOrAdmin]
-        elif self.action in ['approve', 'reject']:
-            permission_classes = [IsAuthenticated, IsAdmin]
+        if self.action in ["list", "retrieve", "increment_view"]:
+            permission_classes = [AllowAny]
+        elif self.action == "recommend":
+            permission_classes = [IsJobSeeker]
+        elif self.action == "create":
+            permission_classes = [IsRecruiter]
+        elif self.action in ["update", "partial_update", "destroy", "submit_for_approval"]:
+            permission_classes = [IsRecruiterOwnerOrAdmin]
         else:
-            permission_classes = []  # Public xem list, detail
-        return [permission() for permission in permission_classes]
+            permission_classes = [IsAuthenticatedAndApproved]
+        return [perm() for perm in permission_classes]
 
     def perform_create(self, serializer):
         recruiter_profile = getattr(self.request.user, 'recruiter_profile', None)
         if not recruiter_profile:
-            raise PermissionError("Người dùng chưa có hồ sơ nhà tuyển dụng.")
-        serializer.save(
-            recruiter_profile=recruiter_profile,
-            status=JobStatus.DRAFT,
-            is_active=False,
-        )
+            return Response({'detail': 'Bạn không phải nhà tuyển dụng hoặc chưa tạo hồ sơ tuyển dụng.'},
+                            status=status.HTTP_400_BAD_REQUEST)
+        serializer.save(recruiter_profile=recruiter_profile, status='Draft')
 
-    @action(detail=True, methods=['post'])
-    def submit_for_review(self, request, slug=None):
+    @action(detail=True, methods=['post'], permission_classes=[AllowAny])
+    def increment_view(self, request, slug=None):
         job = self.get_object()
-        if job.status != JobStatus.DRAFT:
-            return Response({"detail": "Chỉ tin nháp mới có thể gửi duyệt."}, status=status.HTTP_400_BAD_REQUEST)
-        job.status = JobStatus.PENDING
+        job.views_count += 1
         job.save()
-        return Response({"detail": "Tin đã được gửi để chờ duyệt."})
+        return Response({"views_count": job.views_count})
 
     @action(detail=True, methods=['post'])
-    def approve(self, request, slug=None):
+    def submit_for_approval(self, request, slug=None):
         job = self.get_object()
-        if job.status != JobStatus.PENDING:
-            return Response({"detail": "Tin phải ở trạng thái chờ duyệt."}, status=status.HTTP_400_BAD_REQUEST)
-        job.status = JobStatus.APPROVED
-        job.is_active = True
+        if job.recruiter_profile.user != request.user:
+            return Response({"detail": "Bạn không có quyền gửi duyệt tin này."}, status=status.HTTP_403_FORBIDDEN)
+        if job.status != "Draft":
+            return Response({"detail": "Chỉ có thể gửi duyệt từ trạng thái bản nháp."}, status=status.HTTP_400_BAD_REQUEST)
+        job.status = "Pending"
+        job.save()
+        return Response({"detail": "Đã gửi yêu cầu duyệt tin tuyển dụng."})
+
+
+class AdminJobApprovalViewSet(viewsets.ViewSet):
+    permission_classes = [IsAdmin]
+
+    def list(self, request):
+        jobs = JobPosting.objects.filter(status="Pending")
+        serializer = JobPostingSerializer(jobs, many=True)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=['post'], url_path='approve')
+    def approve(self, request, slug=None):
+        try:
+            job = JobPosting.objects.get(slug=slug, status="Pending")
+        except JobPosting.DoesNotExist:
+            return Response({"detail": "Tin tuyển dụng không tồn tại hoặc không ở trạng thái chờ duyệt."},
+                            status=status.HTTP_404_NOT_FOUND)
+        job.status = "Approved"
         job.save()
         return Response({"detail": "Tin tuyển dụng đã được duyệt."})
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='reject')
     def reject(self, request, slug=None):
-        job = self.get_object()
-        if job.status != JobStatus.PENDING:
-            return Response({"detail": "Tin phải ở trạng thái chờ duyệt."}, status=status.HTTP_400_BAD_REQUEST)
-        job.status = JobStatus.REJECTED
-        job.is_active = False
+        try:
+            job = JobPosting.objects.get(slug=slug, status="Pending")
+        except JobPosting.DoesNotExist:
+            return Response({"detail": "Tin tuyển dụng không tồn tại hoặc không ở trạng thái chờ duyệt."},
+                            status=status.HTTP_404_NOT_FOUND)
+        job.status = "Rejected"
         job.save()
         return Response({"detail": "Tin tuyển dụng đã bị từ chối."})
 
-    @action(detail=True, methods=['post'])
-    def activate(self, request, slug=None):
-        job = self.get_object()
-        job.is_active = not job.is_active
-        job.save()
-        return Response({'is_active': job.is_active})
+
+class RecruiterJobsViewSet(viewsets.ReadOnlyModelViewSet):
+    serializer_class = JobPostingSerializer
+    permission_classes = [IsOwnerOrAdmin]
+
+    def get_queryset(self):
+        recruiter_id = self.kwargs.get('recruiter_id')
+        return JobPosting.objects.filter(recruiter_profile__id=recruiter_id)
+
+
+from rest_framework.views import APIView
+from rest_framework.permissions import AllowAny
+from .models import JobType, JobStatus
+from .serializers import JobTypeSerializer, JobStatusSerializer, JobPostingRecommendSerializer
+from django.db.models import Q
+
+class JobTypeListAPIView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        choices = [{'value': c[0], 'label': c[1]} for c in JobType.choices]
+        print(choices)
+        serializer = JobTypeSerializer(choices, many=True)
+        return Response(serializer.data)
+
+
+class JobStatusListAPIView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        choices = [{'value': c[0], 'label': c[1]} for c in JobStatus.choices]
+        serializer = JobStatusSerializer(choices, many=True)
+        return Response(serializer.data)
+
+
+class JobRecommendAPIView(APIView):
+    permission_classes = [IsJobSeeker]
+
+    def get(self, request):
+        user = request.user
+        jobseeker_profile = getattr(user, 'job_seeker_profile', None)
+        if not jobseeker_profile:
+            return Response({"detail": "Bạn chưa có hồ sơ người tìm việc."}, status=status.HTTP_400_BAD_REQUEST)
+
+        skills = [skill.name.lower() for skill in jobseeker_profile.skills.all()]
+        filters = Q(is_active=True, status="Approved")
+        if skills:
+            skill_filters = Q()
+            for skill in skills:
+                skill_filters |= Q(description__icontains=skill) | Q(requirements__icontains=skill)
+            filters &= skill_filters
+
+        recommended_jobs = JobPosting.objects.filter(filters).order_by('-created_at')[:10]
+        serializer = JobPostingRecommendSerializer(recommended_jobs, many=True)
+        return Response(serializer.data)

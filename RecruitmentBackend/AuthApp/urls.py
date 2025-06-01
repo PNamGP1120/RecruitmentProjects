@@ -1,18 +1,16 @@
-from django.urls import path
-from .views import (
-    RegisterView, LoginView, CurrentUserView,
-    RoleListView, ActiveRoleUpdateView,
-    RequestRecruiterRoleView, ApproveRecruiterView,
-    AssignAdminRoleView
-)
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from rest_framework_simplejwt.views import TokenRefreshView
+
+from .views import AuthViewSet, RoleViewSet, UserRoleViewSet, AdminUserRoleViewSet
+
+router = DefaultRouter()
+router.register(r'auth', AuthViewSet, basename='auth')
+router.register(r'roles', RoleViewSet, basename='roles')
+router.register(r'user-roles', UserRoleViewSet, basename='user-roles')
+router.register(r'api/admin/user-roles', AdminUserRoleViewSet, basename='admin-user-roles')
 
 urlpatterns = [
-    path('register/', RegisterView.as_view(), name='auth-register'),
-    path('login/', LoginView.as_view(), name='auth-login'),
-    path('user/', CurrentUserView.as_view(), name='auth-current-user'),
-    path('roles/', RoleListView.as_view(), name='auth-role-list'),
-    path('active-role/', ActiveRoleUpdateView.as_view(), name='auth-active-role'),
-    path('request-recruiter/', RequestRecruiterRoleView.as_view(), name='auth-request-recruiter'),
-    path('recruiter-approve/', ApproveRecruiterView.as_view(), name='auth-recruiter-approve'),
-    path('assign-admin/', AssignAdminRoleView.as_view(), name='auth-assign-admin'),
+    path('', include(router.urls)),
+    path('auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 ]

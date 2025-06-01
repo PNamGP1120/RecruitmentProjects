@@ -157,6 +157,11 @@ REST_FRAMEWORK = {
     ),
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 10,
+    'DEFAULT_FILTER_BACKENDS': [
+        'django_filters.rest_framework.DjangoFilterBackend',
+        'rest_framework.filters.SearchFilter',
+        'rest_framework.filters.OrderingFilter',
+    ],
 }
 
 # Cấu hình Simple JWT
@@ -195,3 +200,12 @@ LOGGING = {
 
 # Khai báo port django chạy (nếu muốn đổi mặc định 8000)
 # Để chạy: python manage.py runserver 0.0.0.0:8000
+
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+#
+# EMAIL_HOST = 'smtp.gmail.com'
+# EMAIL_PORT = 587
+# EMAIL_USE_TLS = True
+# EMAIL_HOST_USER = 'phuongnam.it0212@gmail.com'
+# EMAIL_HOST_PASSWORD = 'Phuongnam0212'  # Hoặc mật khẩu ứng dụng (App password)
+# DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
