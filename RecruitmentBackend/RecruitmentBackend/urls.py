@@ -12,5 +12,5 @@ urlpatterns = [
     path('', include('ApplicationApp.urls')),
     # path('api/chat/', include('ChatApp.urls')),
     # path('', include('NotificationApp.urls')),
-    # path('api/report/', include('ReportApp.urls')),
+    path('', include('ReportApp.urls')),
 ]

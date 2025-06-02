@@ -144,6 +144,7 @@ AUTH_USER_MODEL = 'AuthApp.MyUser'
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:19006",  # Expo React Native mặc định
     "http://localhost:3000",   # React web
+    "http://192.168.x.x:19006",
     # Thêm domain khác nếu cần
 ]
 
