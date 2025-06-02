@@ -1,11 +1,23 @@
 // AppNavigator.js
 import React, { useContext } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
+
+
+
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+
+import StartScreen from '../screens/StartScreen';
+import LoginScreen from '../screens/Auth/LoginScreen';
+import JobSeekerHomeScreen from '../screens/JobSeeker/HomeScreen';
+import ChatScreen from '../screens/Chat/ChatScreen';
+
 import { AuthContext } from '../contexts/AuthContext';
 import JobSeekerStack from './JobSeekerStack';
 import RecruiterStack from './RecruiterStack';
 import AdminStack from './AdminStack';
 import AuthStack from './AuthStack';
+
+const Stack = createNativeStackNavigator();
 
 export default function AppNavigator() {
   const { userToken, userInfo, loading } = useContext(AuthContext);

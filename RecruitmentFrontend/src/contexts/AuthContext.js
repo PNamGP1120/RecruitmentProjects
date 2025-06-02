@@ -32,26 +32,13 @@ export const AuthProvider = ({children}) => {
     const signIn = async (username, password) => {
         try {
             const data = await login(username, password);
-            if (!data.access) {
-                throw new Error('Không nhận được token từ server');
-            }
-
-            // Lưu token vào AsyncStorage
-            await AsyncStorage.setItem('userToken', data.access);
-
-            // Lấy thông tin user
             const userInfo = await getCurrentUser(data.access);
-            if (!userInfo) {
-                throw new Error('Không thể lấy thông tin người dùng');
-            }
 
             setUserToken(data.access);
             setUserInfo(userInfo);
+
+            // Không điều hướng ở đây
         } catch (error) {
-            // Xóa token nếu có lỗi
-            await AsyncStorage.removeItem('userToken');
-            setUserToken(null);
-            setUserInfo(null);
             throw error;
         }
     };
