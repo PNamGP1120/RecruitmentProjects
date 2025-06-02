@@ -222,7 +222,6 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 # EMAIL_HOST_USER = 'phuongnam.it0212@gmail.com'
 # EMAIL_HOST_PASSWORD = 'Phuongnam0212'  # Hoặc mật khẩu ứng dụng (App password)
 # DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
->>>>>>>> 5c234d2ba38bb11be79d0d0a91bf910649468dfc:RecruitmentBackend/RecruitmentBackend/settings.py
 
 # CORS configuration
 CORS_ORIGIN_ALLOW_ALL = True
