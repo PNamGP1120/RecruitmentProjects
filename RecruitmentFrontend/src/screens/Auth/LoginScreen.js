@@ -41,21 +41,16 @@ export default function LoginScreen({navigation}) {
     };
 
     useEffect(() => {
-        if (userInfo?.active_role) {
+        if (userInfo?.roles) {
             let targetScreen;
-            switch (userInfo.active_role) {
-                case 'JobSeeker':
-                    targetScreen = 'JobSeekerHome';
-                    break;
-                case 'Recruiter':
-                    targetScreen = 'RecruiterHome';
-                    break;
-                case 'Admin':
-                    targetScreen = 'AdminDashboard';
-                    break;
-                default:
-                    targetScreen = 'Start';
-                    break;
+            if (userInfo.roles.includes('Người tìm việc')) {
+                targetScreen = 'JobSeekerHome';
+            } else if (userInfo.roles.includes('Nhà tuyển dụng')) {
+                targetScreen = 'RecruiterHome';
+            } else if (userInfo.roles.includes('Admin')) {
+                targetScreen = 'AdminDashboard';
+            } else {
+                targetScreen = 'Start';
             }
 
             // Reset navigation stack to prevent going back to login

@@ -1,9 +1,6 @@
 // AppNavigator.js
 import React, { useContext } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
-
-
-
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import StartScreen from '../screens/StartScreen';
@@ -22,18 +19,22 @@ const Stack = createNativeStackNavigator();
 export default function AppNavigator() {
   const { userToken, userInfo, loading } = useContext(AuthContext);
 
-
   if (loading) return null;
-  console.log(userInfo)
+  
+  // Kiểm tra role dựa trên mảng roles
+  const hasRole = (roleName) => {
+    return userInfo?.roles?.includes(roleName);
+  };
+
   return (
     <NavigationContainer>
       {!userToken ? (
         <AuthStack />
-      ) : userInfo?.active_role === 'JobSeeker' ? (
+      ) : hasRole('Người tìm việc') ? (
         <JobSeekerStack />
-      ) : userInfo?.active_role === 'Recruiter' ? (
+      ) : hasRole('Nhà tuyển dụng') ? (
         <RecruiterStack />
-      ) : userInfo?.active_role === 'Admin' ? (
+      ) : hasRole('Admin') ? (
         <AdminStack />
       ) : (
         <AuthStack />

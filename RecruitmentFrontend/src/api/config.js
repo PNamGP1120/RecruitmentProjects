@@ -4,7 +4,7 @@ export const ENDPOINTS = {
     // Xac thuc, phan quyen
     LOGIN: '/auth/login/',
     REGISTER: '/auth/register/',
-    CURRENT_USER: '/auth/user-info/',
+    CURRENT_USER: '/auth/user_info/',
     UPDATE_USER: '/auth/user/',
     REGISTER_JOB_SEEKER: '/auth/register/job-seeker/',
     REGISTER_RECRUITER: '/auth/register/recruiter/',
