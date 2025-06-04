@@ -146,7 +146,7 @@ class RoleViewSet(viewsets.ReadOnlyModelViewSet):
 
     def list(self, request, *args, **kwargs):
         roles = Role.objects.all()
-        data = [{'name': r.name, 'description': r.description} for r in roles]
+        data = [{'uuid': r.id, 'name': r.name, 'description': r.description} for r in roles]
         return Response(data)
 
 class UserRoleViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
