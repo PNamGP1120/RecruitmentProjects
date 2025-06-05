@@ -49,7 +49,7 @@ export default function JobSeekerProfileEditScreen({ navigation }) {
       try {
         // Lấy profile từ API backend
         const res = await fetch(
-          `http://192.168.2.178:8000/job-seeker-profiles/me/`,
+          `http://192.168.100.222:8000/job-seeker-profiles/me/`,
           {
             headers: { Authorization: `Bearer ${userToken}` },
           }
