@@ -183,4 +183,12 @@ export const uploadAvatar = async (token, avatar) => {
   return apiRequest(ENDPOINTS.AVATAR_UPLOAD, 'POST', token, formData);
 };
 
+/**
+ * Lấy danh sách kỹ năng
+ * @returns {Array} [{ id, name }]
+ */
+export const getSkills = async (token) => {
+  return apiRequest(ENDPOINTS.SKILLS, 'GET', token);
+};
+
 // Hàm previewResume và editResume sẽ được dùng ở màn hình chi tiết và chỉnh sửa
