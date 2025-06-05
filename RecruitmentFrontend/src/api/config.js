@@ -41,4 +41,5 @@ export const ENDPOINTS = {
     RESUMES: '/resumes/',
     RESUME_DETAIL: (uuid) => `/resumes/${uuid}/`,
     AVATAR_UPLOAD: '/auth/avatar_upload/',
+    SKILLS: '/skills/',
 };
