@@ -23,16 +23,17 @@ export default function AppNavigator() {
   
   // Kiểm tra role dựa trên mảng roles
   const hasRole = (roleName) => {
-    return userInfo?.roles?.includes(roleName);
+    return userInfo?.active_role === roleName;
   };
 
   return (
     <NavigationContainer>
+      {console.log(userInfo)}
       {!userToken ? (
         <AuthStack />
-      ) : hasRole('Người tìm việc') ? (
+      ) : hasRole('JobSeeker') ? (
         <JobSeekerStack />
-      ) : hasRole('Nhà tuyển dụng') ? (
+      ) : hasRole('Recruiter') ? (
         <RecruiterStack />
       ) : hasRole('Admin') ? (
         <AdminStack />

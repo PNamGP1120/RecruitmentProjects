@@ -1,8 +1,6 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import HomeScreen from '../screens/JobSeeker/HomeScreen';
-import JobSearchScreen from '../screens/JobSeeker/JobSearchScreen';
-import ChatScreen from '../screens/JobSeeker/ChatScreen';
 import ProfileScreen from '../screens/JobSeeker/ProfileScreen';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import ConversationsScreen from "../screens/JobSeeker/ConversationsScreen"; 
@@ -28,8 +26,6 @@ export default function JobSeekerTabNavigator() {
       })}
     >
       <Tab.Screen name="Home" component={HomeScreen} options={{ tabBarLabel: 'Trang chủ' }} />
-      {/* <Tab.Screen name="Jobs" component={JobSearchScreen} options={{ tabBarLabel: 'Tìm việc' }} /> */}
-      {/* <Tab.Screen name="Conversations" component={ConversationsScreen} /> */}
       <Tab.Screen name="Messages" component={ConversationsScreen} options={{ tabBarLabel: 'Tin nhắn' }} />
       <Tab.Screen name="Profile" component={ProfileScreen} options={{ tabBarLabel: 'Tài khoản' }} />
 

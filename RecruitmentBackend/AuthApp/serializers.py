@@ -25,8 +25,16 @@ class RegisterSerializer(serializers.ModelSerializer):
         user.set_password(password)
         user.save()
 
+        # Lấy vai trò JobSeeker
         jobseeker_role = Role.objects.get(name='JobSeeker')
-        UserRole.objects.create(user=user, role=jobseeker_role, is_approved=True)
+
+        # Gán role JobSeeker cho user, đồng thời đặt trạng thái is_approved=True
+        user_role = UserRole.objects.create(user=user, role=jobseeker_role, is_approved=True)
+
+        # Kích hoạt role JobSeeker cho user
+        user.active_role = jobseeker_role
+        user.save()
+
         return user
 
 # Đăng nhập
@@ -46,11 +54,16 @@ class LoginSerializer(serializers.Serializer):
 class UserSerializer(serializers.ModelSerializer):
     roles = serializers.StringRelatedField(many=True)
     avatar_url = serializers.ReadOnlyField()
+    active_role = serializers.SerializerMethodField()
 
     class Meta:
         model = MyUser
         fields = ('id', 'username', 'first_name', 'last_name','email', 'avatar_url', 'roles', 'active_role')
-
+    
+    def get_active_role(self, obj):
+        # Lấy tên của active_role thay vì ID
+        return obj.active_role.name if obj.active_role else None
+    
 # Đổi mật khẩu
 class ChangePasswordSerializer(serializers.Serializer):
     old_password = serializers.CharField(write_only=True, required=True)
