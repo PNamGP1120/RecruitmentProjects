@@ -47,7 +47,7 @@ class ResumeSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Resume
-        fields = ['id', 'job_seeker', 'title', 'file', 'is_active', 'created_at']
+        fields = ['id', 'job_seeker', 'title', 'file_path', 'is_active', 'created_at']
         read_only_fields = ['id', 'job_seeker', 'created_at']
 
     def create(self, validated_data):
@@ -56,3 +56,18 @@ class ResumeSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         return super().update(instance, validated_data)
+
+    def to_representation(self, instance):
+        rep = super().to_representation(instance)
+        if instance.file_path:
+            # Lấy file_path và kiểm tra loại file
+            file_url = instance.file_path.url
+            file_extension = file_url.split('.')[-1].lower()
+            if file_extension in ['pdf', 'doc','docx']:
+                # Thêm tham số raw để đảm bảo file được phục vụ đúng
+                rep['file_path'] = instance.file_path.build_url(resource_type='raw')
+            else:
+                rep['file_path'] = file_url
+        else:
+            rep['file_path'] = None
+        return rep

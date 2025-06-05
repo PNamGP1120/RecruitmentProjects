@@ -11,9 +11,16 @@ import { API_URL } from './config';
  * @returns {Promise<any>} - Kết quả trả về từ API
  */
 export const apiRequest = async (endpoint, method = 'GET', token = null, body = null) => {
-  const headers = {
-    'Content-Type': 'application/json',
-  };
+  let headers = {};
+  let fetchBody = null;
+
+  if (body instanceof FormData) {
+    // Không set Content-Type, để fetch tự động set boundary cho multipart/form-data
+    fetchBody = body;
+  } else {
+    headers['Content-Type'] = 'application/json';
+    fetchBody = body ? JSON.stringify(body) : null;
+  }
   if (token) {
     headers.Authorization = `Bearer ${token}`;
   }
@@ -21,8 +28,13 @@ export const apiRequest = async (endpoint, method = 'GET', token = null, body = 
   const res = await fetch(`${API_URL}${endpoint}`, {
     method,
     headers,
-    body: body ? JSON.stringify(body) : null,
+    body: fetchBody,
   });
+
+  // Check for 204 No Content status
+  if (res.status === 204) {
+    return null; // No content to parse, return null or true
+  }
 
   const data = await res.json();
   if (!res.ok) {

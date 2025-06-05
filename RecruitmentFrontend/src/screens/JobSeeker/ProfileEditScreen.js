@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { AuthContext } from '../../contexts/AuthContext';
 import * as ImagePicker from 'expo-image-picker';
-import { updateUser } from '../../api/user'; // hàm api updateUser đã chuẩn bị
+import { updateUserPatch, uploadAvatar } from '../../api/user';
 
 export default function ProfileEditScreen({ navigation }) {
   const { userInfo, userToken, updateUserInfoInContext } = useContext(AuthContext);
@@ -35,7 +35,21 @@ export default function ProfileEditScreen({ navigation }) {
         allowsEditing: true,
       });
       if (!result.canceled) {
-        setAvatar(result.assets[0].uri);
+        const uri = result.assets[0].uri;
+        setLoading(true);
+        try {
+          const res = await uploadAvatar(userToken, uri);
+          if (res && res.avatar_url) {
+            setAvatar(res.avatar_url);
+            updateUserInfoInContext({ ...userInfo, avatar_url: res.avatar_url });
+            Alert.alert('Thành công', 'Cập nhật ảnh đại diện thành công');
+          } else {
+            Alert.alert('Lỗi', 'Không nhận được avatar mới từ server');
+          }
+        } catch (err) {
+          Alert.alert('Lỗi', err.message || 'Không thể upload avatar');
+        }
+        setLoading(false);
       }
     } catch (error) {
       Alert.alert('Lỗi', 'Không thể chọn ảnh');
@@ -71,7 +85,7 @@ export default function ProfileEditScreen({ navigation }) {
       };
       console.log('dataToUpdate', dataToUpdate)
 
-      const res = await updateUser(userToken, dataToUpdate);
+      const res = await updateUserPatch(userToken, dataToUpdate);
       console.log('res', res)
       // Kiểm tra thành công: nếu có username hoặc id trả về là ổn
       if (res && (res.username || res.id)) {
@@ -97,47 +111,47 @@ export default function ProfileEditScreen({ navigation }) {
       keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
     >
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-        <Text style={styles.heading}>Chỉnh sửa thông tin cá nhân</Text>
+        <Text style={styles.heading}>Personal Editing</Text>
 
         <TouchableOpacity style={styles.avatarContainer} onPress={pickImage}>
           {avatar ? (
             <Image source={{ uri: avatar }} style={styles.avatar} />
           ) : (
             <View style={styles.avatarPlaceholder}>
-              <Text style={styles.avatarPlaceholderText}>Chọn ảnh</Text>
+              <Text style={styles.avatarPlaceholderText}>Choose your avatar</Text>
             </View>
           )}
         </TouchableOpacity>
 
         <View style={styles.formGroup}>
-          <Text style={styles.label}>Họ *</Text>
+          <Text style={styles.label}>First Name *</Text>
           <TextInput
             style={styles.input}
             value={firstName}
             onChangeText={setFirstName}
-            placeholder="Nhập họ"
+            placeholder="Enter your first name"
             autoCapitalize="words"
           />
         </View>
 
         <View style={styles.formGroup}>
-          <Text style={styles.label}>Tên *</Text>
+          <Text style={styles.label}>Last Name *</Text>
           <TextInput
             style={styles.input}
             value={lastName}
             onChangeText={setLastName}
-            placeholder="Nhập tên"
+            placeholder="Enter your last name"
             autoCapitalize="words"
           />
         </View>
 
         <View style={styles.formGroup}>
-          <Text style={styles.label}>Tên đăng nhập *</Text>
+          <Text style={styles.label}>Username *</Text>
           <TextInput
             style={styles.input}
             value={username}
             onChangeText={setUsername}
-            placeholder="Nhập username"
+            placeholder="Enter your username"
             autoCapitalize="none"
             autoCorrect={false}
           />
@@ -149,7 +163,7 @@ export default function ProfileEditScreen({ navigation }) {
             style={styles.input}
             value={email}
             onChangeText={setEmail}
-            placeholder="Nhập email"
+            placeholder="Enter your email"
             keyboardType="email-address"
             autoCapitalize="none"
             autoCorrect={false}
@@ -164,7 +178,7 @@ export default function ProfileEditScreen({ navigation }) {
           {loading ? (
             <ActivityIndicator size="small" color="#fff" />
           ) : (
-            <Text style={styles.buttonText}>Cập nhật</Text>
+            <Text style={styles.buttonText}>Update</Text>
           )}
         </TouchableOpacity>
       </ScrollView>

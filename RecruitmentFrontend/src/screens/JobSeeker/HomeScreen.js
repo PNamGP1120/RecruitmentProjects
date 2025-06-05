@@ -140,14 +140,17 @@ export default function JobSeekerHome({ navigation }) {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <View>
+        {/* Nút 3 gạch mở Drawer */}
+        <TouchableOpacity onPress={() => navigation.openDrawer()} style={{ marginRight: 16 }}>
+          <Ionicons name="menu" size={32} color="#222" />
+        </TouchableOpacity>
+        <View style={{ flex: 1 }}>
           <Text style={styles.welcomeText}>Welcome Back!</Text>
           <Text style={styles.usernameText}>
             {userInfo?.first_name || userInfo?.username || 'User'}{' '}
             <Ionicons name="hand-left-outline" size={22} color="#333" />
           </Text>
         </View>
-
         <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
           <Image
             source={{ uri: userInfo?.avatar_url }}

@@ -49,7 +49,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = MyUser
-        fields = ('id', 'username', 'email', 'avatar_url', 'roles', 'active_role')
+        fields = ('id', 'username', 'first_name', 'last_name','email', 'avatar_url', 'roles', 'active_role')
 
 # Đổi mật khẩu
 class ChangePasswordSerializer(serializers.Serializer):

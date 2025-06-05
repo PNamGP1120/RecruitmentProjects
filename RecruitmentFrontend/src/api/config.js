@@ -5,7 +5,7 @@ export const ENDPOINTS = {
     LOGIN: '/auth/login/',
     REGISTER: '/auth/register/',
     CURRENT_USER: '/auth/user_info/',
-    UPDATE_USER: '/auth/user/',
+    UPDATE_USER: '/auth/update_user/',
     REGISTER_JOB_SEEKER: '/auth/register/job-seeker/',
     REGISTER_RECRUITER: '/auth/register/recruiter/',
     SWITCH_ROLE: '/auth/switch-role/',
@@ -36,4 +36,9 @@ export const ENDPOINTS = {
     //
     // // 🔔 Thông báo
     // NOTIFICATIONS: '/notifications/',
+
+    // 📄 Resume/CV
+    RESUMES: '/resumes/',
+    RESUME_DETAIL: (uuid) => `/resumes/${uuid}/`,
+    AVATAR_UPLOAD: '/auth/avatar_upload/',
 };

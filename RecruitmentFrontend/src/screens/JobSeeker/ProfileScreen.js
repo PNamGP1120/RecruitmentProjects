@@ -24,7 +24,7 @@ export default function ProfileScreen({ navigation }) {
             style={styles.avatar}
           />
           <Text style={styles.name}>
-            {userInfo?.first_name || userInfo?.username || 'Người dùng'}
+            {userInfo?.first_name || ''} {userInfo?.last_name || ''}
           </Text>
           <Text style={styles.email}>{userInfo?.email || 'email@example.com'}</Text>
         </View>
@@ -37,7 +37,7 @@ export default function ProfileScreen({ navigation }) {
             onPress={() => navigation.navigate('CVList')}
           >
             <Ionicons name="document-text-outline" size={28} color="#004aad" />
-            <Text style={styles.cardText}>Quản lý CV</Text>
+            <Text style={styles.cardText}>Resume Management</Text>
             <Ionicons name="chevron-forward" size={20} color="#888" />
           </TouchableOpacity>
 
@@ -46,16 +46,25 @@ export default function ProfileScreen({ navigation }) {
             onPress={() => navigation.navigate('ProfileEdit')}
           >
             <Ionicons name="person-circle-outline" size={28} color="#004aad" />
-            <Text style={styles.cardText}>Thông tin cá nhân</Text>
+            <Text style={styles.cardText}>Personal Information</Text>
             <Ionicons name="chevron-forward" size={20} color="#888" />
           </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.card}
-            onPress={() => navigation.navigate('RecruiterRegistration')}
+            onPress={() => navigation.navigate('JobSeekerProfileEdit')}
           >
-            <Ionicons name="business-outline" size={28} color="#004aad" />
-            <Text style={styles.cardText}>Công ty của tôi</Text>
+            <Ionicons name="settings-outline" size={28} color="#004aad" />
+            <Text style={styles.cardText}>Profile Information</Text>
+            <Ionicons name="chevron-forward" size={20} color="#888" />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.card}
+            onPress={() => navigation.navigate('ApplicationStatus')}
+          >
+            <Ionicons name="list-circle-outline" size={28} color="#004aad" />
+            <Text style={styles.cardText}>Applications</Text>
             <Ionicons name="chevron-forward" size={20} color="#888" />
           </TouchableOpacity>
 
@@ -64,7 +73,7 @@ export default function ProfileScreen({ navigation }) {
             onPress={() => navigation.navigate('About')}
           >
             <Ionicons name="information-circle-outline" size={28} color="#004aad" />
-            <Text style={styles.cardText}>Về chúng tôi</Text>
+            <Text style={styles.cardText}>About us</Text>
             <Ionicons name="chevron-forward" size={20} color="#888" />
           </TouchableOpacity>
 
@@ -73,8 +82,7 @@ export default function ProfileScreen({ navigation }) {
             onPress={() => signOut()}
           >
             <Ionicons name="log-out-outline" size={28} color="#d33" />
-            <Text style={[styles.cardText, { color: '#d33' }]}>Đăng xuất</Text>
-            <Ionicons name="chevron-forward" size={20} color="#d33" />
+            <Text style={[styles.cardText, { color: '#d33' }]}>Logout</Text>
           </TouchableOpacity>
 
         </View>

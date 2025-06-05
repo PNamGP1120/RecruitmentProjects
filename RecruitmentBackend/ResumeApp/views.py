@@ -7,12 +7,25 @@ from .models import Skill, JobSeekerProfile, Resume
 from .serializers import SkillSerializer, JobSeekerProfileSerializer, ResumeSerializer
 from .permissions import IsAdminUser, IsJobSeekerAndOwner, IsOwnerOrAdmin
 
+
 class SkillViewSet(viewsets.ModelViewSet):
     queryset = Skill.objects.all()
     serializer_class = SkillSerializer
-    permission_classes = [IsAuthenticated & IsAdminUser]
+    permission_classes = [IsAuthenticated]  # Tất cả người dùng đã đăng nhập đều có thể xem danh sách kỹ năng
+
     filter_backends = [filters.SearchFilter]
     search_fields = ['name', 'description']
+
+    def get_permissions(self):
+        """
+        Override permissions for different actions:
+        - GET: All authenticated users (JobSeeker, Admin) can view.
+        - POST, PUT, DELETE: Only Admin can create, update, or delete.
+        """
+        if self.action in ['create', 'update', 'destroy']:
+            # Chỉ admin có quyền tạo, sửa hoặc xóa kỹ năng
+            return [IsAdminUser()]
+        return super().get_permissions()
 
 class JobSeekerProfileViewSet(viewsets.ModelViewSet):
     serializer_class = JobSeekerProfileSerializer

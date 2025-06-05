@@ -45,7 +45,7 @@ class JobSeekerProfile(BaseModel):
 class Resume(BaseModel):
     job_seeker = models.ForeignKey(JobSeekerProfile, on_delete=models.CASCADE, related_name='resumes')
     title = models.CharField(max_length=255, blank=True, null=True)
-    file = CloudinaryField(folder='resumes')
+    file_path = CloudinaryField(folder='resumes', resource_type="raw")
     is_active = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
