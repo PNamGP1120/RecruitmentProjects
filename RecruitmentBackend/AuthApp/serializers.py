@@ -50,9 +50,11 @@ class LoginSerializer(serializers.Serializer):
             raise serializers.ValidationError("Tài khoản không hoạt động")
         return {'user': user}
 
+
 # Thông tin người dùng
 class UserSerializer(serializers.ModelSerializer):
     roles = serializers.StringRelatedField(many=True)
+    # roles = serializers.SerializerMethodField()
     avatar_url = serializers.ReadOnlyField()
     active_role = serializers.SerializerMethodField()
 

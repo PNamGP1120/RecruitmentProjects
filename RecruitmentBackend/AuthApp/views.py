@@ -28,6 +28,7 @@ class UserViewSet(viewsets.ModelViewSet):
     ordering = ['-date_joined']  # Sắp xếp theo thời gian tham gia giảm dần
 
 
+
 class AuthViewSet(viewsets.GenericViewSet):
     """
     ViewSet cho các API đăng ký, đăng nhập, user info, đổi mật khẩu, upload avatar,...
