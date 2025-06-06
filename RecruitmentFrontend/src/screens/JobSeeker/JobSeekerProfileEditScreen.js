@@ -12,9 +12,11 @@ import {
   FlatList,
   Modal,
   Image,
+  Alert,
 } from 'react-native';
 import { AuthContext } from '../../contexts/AuthContext';
-import { getSkills, updateUserPatch } from '../../api/user';
+import { getSkills } from '../../api/user';
+import { getJobSeekerProfile, createJobSeekerProfile, updateJobSeekerProfile } from '../../api/jobSeekerProfile';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
 const GENDER_CHOICES = [
@@ -47,16 +49,15 @@ export default function JobSeekerProfileEditScreen({ navigation }) {
     const fetchData = async () => {
       setLoading(true);
       try {
-        // Lấy profile từ API backend
-        const res = await fetch(
-          `http://192.168.100.222:8000/job-seeker-profiles/me/`,
-          {
-            headers: { Authorization: `Bearer ${userToken}` },
-          }
-        );
-        if (!res.ok) throw new Error('No profile');
-        const data = await res.json();
-        setProfile({
+        console.log('Fetching profile with token:', userToken);
+        const data = await getJobSeekerProfile(userToken);
+        console.log('Profile data received:', data);
+
+        if (!data) {
+          throw new Error('No profile data received');
+        }
+
+        const newProfile = {
           summary: data.summary || '',
           experience: data.experience || '',
           education: data.education || '',
@@ -65,20 +66,15 @@ export default function JobSeekerProfileEditScreen({ navigation }) {
           date_of_birth: data.date_of_birth || '',
           gender: data.gender || '',
           id: data.id,
-        });
-        setInitialProfile({
-          summary: data.summary || '',
-          experience: data.experience || '',
-          education: data.education || '',
-          skills: data.skills?.map((s) => s.id) || [],
-          phone_number: data.phone_number || '',
-          date_of_birth: data.date_of_birth || '',
-          gender: data.gender || '',
-          id: data.id,
-        });
+        };
+
+        setProfile(newProfile);
+        setInitialProfile(newProfile);
       } catch (e) {
-        // Nếu chưa có profile, setProfile với id = null
-        setProfile({
+        console.error('Error fetching profile:', e);
+        Alert.alert('Error', 'Failed to load profile data');
+        
+        const defaultProfile = {
           summary: '',
           experience: '',
           education: '',
@@ -87,25 +83,25 @@ export default function JobSeekerProfileEditScreen({ navigation }) {
           date_of_birth: '',
           gender: '',
           id: null,
-        });
-        setInitialProfile({
-          summary: '',
-          experience: '',
-          education: '',
-          skills: [],
-          phone_number: '',
-          date_of_birth: '',
-          gender: '',
-          id: null,
-        });
+        };
+        
+        setProfile(defaultProfile);
+        setInitialProfile(defaultProfile);
       }
+
       try {
+        console.log('Fetching skills...');
         const skills = await getSkills(userToken);
-        console.log('Skills API response:', skills);
+        console.log('Skills received:', skills);
         setSkillsList(Array.isArray(skills.results) ? skills.results : []);
-      } catch (e) {}
+      } catch (e) {
+        console.error('Error fetching skills:', e);
+        Alert.alert('Error', 'Failed to load skills');
+      }
+      
       setLoading(false);
     };
+
     fetchData();
   }, [userToken]);
 
@@ -155,62 +151,21 @@ export default function JobSeekerProfileEditScreen({ navigation }) {
     setSaving(true);
     try {
       if (!profile.id) {
-        // Chưa có profile, gọi POST
-        const res = await fetch('http://192.168.2.178:8000/job-seeker-profiles/', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${userToken}`,
-          },
-          body: JSON.stringify({
-            summary: profile.summary,
-            experience: profile.experience,
-            education: profile.education,
-            phone_number: profile.phone_number,
-            date_of_birth: profile.date_of_birth,
-            gender: profile.gender,
-            skills_ids: profile.skills,
-          }),
-        });
-        if (res.ok) {
-          const data = await res.json();
-          setProfile({ ...profile, id: data.id });
-          setInitialProfile({ ...profile, id: data.id });
-        }
+        const data = await createJobSeekerProfile(userToken, profile);
+        setProfile({ ...profile, id: data.id });
+        setInitialProfile({ ...profile, id: data.id });
       } else {
-        // Đã có profile, PATCH như cũ
-        const res = await fetch(
-          `http://192.168.2.178:8000/job-seeker-profiles/${profile.id}/`,
-          {
-            method: 'PATCH',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${userToken}`,
-            },
-            body: JSON.stringify({
-              summary: profile.summary,
-              experience: profile.experience,
-              education: profile.education,
-              phone_number: profile.phone_number,
-              date_of_birth: profile.date_of_birth,
-              gender: profile.gender,
-              skills_ids: profile.skills,
-            }),
-          }
-        );
-        if (res.ok) {
-          const data = await res.json();
-          setInitialProfile({
-            summary: data.summary || '',
-            experience: data.experience || '',
-            education: data.education || '',
-            skills: data.skills?.map((s) => s.id) || [],
-            phone_number: data.phone_number || '',
-            date_of_birth: data.date_of_birth || '',
-            gender: data.gender || '',
-            id: data.id,
-          });
-        }
+        const data = await updateJobSeekerProfile(userToken, profile.id, profile);
+        setInitialProfile({
+          summary: data.summary || '',
+          experience: data.experience || '',
+          education: data.education || '',
+          skills: data.skills?.map((s) => s.id) || [],
+          phone_number: data.phone_number || '',
+          date_of_birth: data.date_of_birth || '',
+          gender: data.gender || '',
+          id: data.id,
+        });
       }
     } catch (e) {}
     setSaving(false);
@@ -238,6 +193,7 @@ export default function JobSeekerProfileEditScreen({ navigation }) {
           <Text style={styles.name}>{userInfo?.first_name || ''} {userInfo?.last_name || ''}</Text>
           <Text style={styles.email}>{userInfo?.email || ''}</Text>
         </View>
+
         {/* Summary */}
         <Text style={styles.sectionTitle}>Summary</Text>
         <View style={styles.box}>
@@ -249,6 +205,7 @@ export default function JobSeekerProfileEditScreen({ navigation }) {
             multiline
           />
         </View>
+
         {/* Experience */}
         <Text style={styles.sectionTitle}>Experience</Text>
         <View style={styles.box}>
@@ -260,6 +217,7 @@ export default function JobSeekerProfileEditScreen({ navigation }) {
             multiline
           />
         </View>
+
         {/* Education */}
         <Text style={styles.sectionTitle}>Education</Text>
         <View style={styles.box}>
@@ -271,6 +229,7 @@ export default function JobSeekerProfileEditScreen({ navigation }) {
             multiline
           />
         </View>
+
         {/* Skills */}
         <TouchableOpacity style={styles.comboBox} onPress={() => setShowSkills(true)}>
           <Text style={styles.comboLabel}>Skills</Text>
@@ -284,6 +243,7 @@ export default function JobSeekerProfileEditScreen({ navigation }) {
               ))}
           </View>
         </TouchableOpacity>
+
         <Modal
           visible={showSkills}
           animationType="slide"
@@ -313,6 +273,7 @@ export default function JobSeekerProfileEditScreen({ navigation }) {
             </View>
           </View>
         </Modal>
+
         {/* Phone */}
         <View style={styles.inputRow}>
           <Text style={styles.inputIcon}>📞</Text>
@@ -324,6 +285,7 @@ export default function JobSeekerProfileEditScreen({ navigation }) {
             keyboardType="phone-pad"
           />
         </View>
+
         {/* Date of Birth */}
         <View style={styles.inputRow}>
           <Text style={styles.inputIcon}>📅</Text>
@@ -346,6 +308,7 @@ export default function JobSeekerProfileEditScreen({ navigation }) {
             maximumDate={new Date()}
           />
         )}
+
         {/* Gender */}
         <TouchableOpacity style={styles.comboBox} onPress={() => setShowGender((v) => !v)}>
           <Text style={styles.comboLabel}>Gender</Text>
@@ -366,6 +329,7 @@ export default function JobSeekerProfileEditScreen({ navigation }) {
             ))}
           </View>
         )}
+        
         {/* Save button */}
         <TouchableOpacity
           style={[styles.saveBtn, isChanged() ? styles.saveBtnActive : styles.saveBtnDisabled]}
