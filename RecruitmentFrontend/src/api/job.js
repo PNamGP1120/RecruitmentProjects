@@ -1,4 +1,49 @@
 import { apiRequest } from './request';
+import { ENDPOINTS } from './config';
+
+/**
+ * Lấy danh sách tin tuyển dụng
+ * @param {object} params - Các tham số tìm kiếm và lọc
+ * @param {string} params.search - Từ khóa tìm kiếm
+ * @param {string} params.ordering - Sắp xếp (views_count, -created_at)
+ * @param {number} params.limit - Giới hạn số lượng
+ * @param {number} params.offset - Vị trí bắt đầu
+ * @returns {Promise<object>} Danh sách tin tuyển dụng
+ */
+export const getJobs = async (params = {}) => {
+  return apiRequest(ENDPOINTS.JOBS, 'GET', null, null, params);
+};
+
+/**
+ * Lấy chi tiết tin tuyển dụng
+ * @param {string} slug - Slug của tin tuyển dụng
+ * @returns {Promise<object>} Chi tiết tin tuyển dụng
+ */
+export const getJobDetail = async (slug) => {
+  return apiRequest(ENDPOINTS.JOB_DETAIL(slug), 'GET');
+};
+
+/**
+ * Lấy danh sách tin tuyển dụng nổi bật
+ * @returns {Promise<object>} Danh sách tin tuyển dụng nổi bật
+ */
+export const getFeaturedJobs = async () => {
+  return getJobs({
+    ordering: '-views_count,-created_at',
+    limit: 10
+  });
+};
+
+/**
+ * Lấy danh sách tin tuyển dụng phổ biến
+ * @returns {Promise<object>} Danh sách tin tuyển dụng phổ biến
+ */
+export const getPopularJobs = async () => {
+  return getJobs({
+    ordering: '-views_count',
+    limit: 20
+  });
+};
 
 /**
  * Lấy danh sách tin tuyển dụng của nhà tuyển dụng
@@ -15,22 +60,6 @@ export const getRecruiterJobs = async (token, userId, params = {}) => {
         return response;
     } catch (error) {
         console.error('Error in getRecruiterJobs:', error);
-        throw error;
-    }
-};
-
-/**
- * Lấy chi tiết tin tuyển dụng theo slug
- * @param {string} token - JWT access token
- * @param {string} slug - Slug của tin tuyển dụng
- * @returns {Promise<Object>} Chi tiết tin tuyển dụng
- */
-export const getJobDetails = async (token, slug) => {
-    try {
-        const response = await apiRequest(`/jobs/${slug}/`, 'GET', token);
-        return response;
-    } catch (error) {
-        console.error('Error in getJobDetails:', error);
         throw error;
     }
 };

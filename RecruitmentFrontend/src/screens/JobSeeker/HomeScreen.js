@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import {
   View,
   Text,
@@ -10,71 +10,12 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AuthContext } from '../../contexts/AuthContext';
+import { getFeaturedJobs, getPopularJobs } from '../../api/job';
+import { JobCard } from '../../components/JobCard';
+import { LoadingSpinner } from '../../components/LoadingSpinner';
+import { ErrorMessage } from '../../components/ErrorMessage';
 
 const { width } = Dimensions.get('window');
-
-// Mẫu dữ liệu Featured Jobs
-const featuredJobsSample = [
-  {
-    id: '1a2b3c4d',
-    title: 'Software Engineer',
-    description: 'Develop scalable web applications...',
-    location: 'California, USA',
-    salary_min: 100000,
-    salary_max: 150000,
-    job_type: 'Full-time',
-    recruiter_profile: {
-      company_name: 'Facebook',
-      company_logo_url:
-        'https://upload.wikimedia.org/wikipedia/commons/0/05/Facebook_Logo_(2019).png',
-    },
-  },
-  {
-    id: '2b3c4d5e',
-    title: 'Product Designer',
-    description: 'Design user-centered products...',
-    location: 'New York, USA',
-    salary_min: 90000,
-    salary_max: 120000,
-    job_type: 'Full-time',
-    recruiter_profile: {
-      company_name: 'Google',
-      company_logo_url:
-        'https://upload.wikimedia.org/wikipedia/commons/2/2f/Google_2015_logo.svg',
-    },
-  },
-  // Thêm các công việc khác nếu muốn
-];
-
-// Mẫu dữ liệu Popular Jobs (cấu trúc tương tự)
-const popularJobsSample = [
-  {
-    id: '3c4d5e6f',
-    title: 'Marketing Manager',
-    location: 'Seattle, USA',
-    salary_min: 80000,
-    salary_max: 110000,
-    job_type: 'Full-time',
-    recruiter_profile: {
-      company_name: 'Amazon',
-      company_logo_url:
-        'https://upload.wikimedia.org/wikipedia/commons/a/a9/Amazon_logo.svg',
-    },
-  },
-  {
-    id: '4d5e6f7g',
-    title: 'Data Scientist',
-    location: 'Los Gatos, USA',
-    salary_min: 95000,
-    salary_max: 140000,
-    job_type: 'Full-time',
-    recruiter_profile: {
-      company_name: 'Netflix',
-      company_logo_url:
-        'https://upload.wikimedia.org/wikipedia/commons/0/08/Netflix_2015_logo.svg',
-    },
-  },
-];
 
 // Hàm format tiền lương
 const formatSalary = (min, max) => {
@@ -86,55 +27,55 @@ const formatSalary = (min, max) => {
 
 export default function JobSeekerHome({ navigation }) {
   const { userInfo } = useContext(AuthContext);
+  const [featuredJobs, setFeaturedJobs] = useState([]);
+  const [popularJobs, setPopularJobs] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    fetchJobs();
+  }, []);
+
+  const fetchJobs = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const [featuredResponse, popularResponse] = await Promise.all([
+        getFeaturedJobs(),
+        getPopularJobs()
+      ]);
+      setFeaturedJobs(featuredResponse.results);
+      setPopularJobs(popularResponse.results);
+    } catch (error) {
+      setError('Failed to load jobs. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Render Featured Job
   const renderFeaturedJob = ({ item }) => (
-    <TouchableOpacity
-      key={item.id}
-      style={styles.featuredJobCard}
-      onPress={() => navigation.navigate('JobDetail', { jobId: item.id })}
-    >
-      <Image
-        source={{ uri: item.recruiter_profile?.company_logo_url }}
-        style={styles.companyLogo}
-      />
-      <Text style={styles.jobTitle}>{item.title}</Text>
-      <Text style={styles.companyName}>
-        {item.recruiter_profile?.company_name || 'Công ty'}
-      </Text>
-      <Text style={styles.location}>{item.location}</Text>
-      <Text style={styles.salary}>
-        {formatSalary(item.salary_min, item.salary_max)}
-      </Text>
-      <Text style={styles.jobType}>{item.job_type}</Text>
-    </TouchableOpacity>
+    <JobCard
+      job={item}
+      onPress={() => navigation.navigate('JobDetail', { slug: item.slug })}
+    />
   );
 
   // Render Popular Job
   const renderPopularJob = ({ item }) => (
-    <TouchableOpacity
-      key={item.id}
-      style={styles.popularJobCard}
-      onPress={() => navigation.navigate('JobDetail', { jobId: item.id })}
-    >
-      <Image
-        source={{ uri: item.recruiter_profile?.company_logo_url }}
-        style={styles.popularCompanyLogo}
-      />
-      <View style={{ flex: 1, marginLeft: 15 }}>
-        <Text style={styles.popularJobTitle}>{item.title}</Text>
-        <Text style={styles.popularCompanyName}>
-          {item.recruiter_profile?.company_name || 'Công ty'}
-        </Text>
-      </View>
-      <View style={{ alignItems: 'flex-end' }}>
-        <Text style={styles.popularSalary}>
-          {formatSalary(item.salary_min, item.salary_max)}
-        </Text>
-        <Text style={styles.popularLocation}>{item.location}</Text>
-      </View>
-    </TouchableOpacity>
+    <JobCard
+      job={item}
+      onPress={() => navigation.navigate('JobDetail', { slug: item.slug })}
+    />
   );
+
+  if (isLoading) {
+    return <LoadingSpinner />;
+  }
+
+  if (error) {
+    return <ErrorMessage message={error} onRetry={fetchJobs} />;
+  }
 
   return (
     <View style={styles.container}>
@@ -183,11 +124,11 @@ export default function JobSeekerHome({ navigation }) {
       <FlatList
         horizontal
         showsHorizontalScrollIndicator={false}
-        data={featuredJobsSample}
+        data={featuredJobs}
         keyExtractor={(item) => item.id}
         renderItem={renderFeaturedJob}
-        contentContainerStyle={{ paddingHorizontal: 10 }}
-        style={{ marginBottom: 25 }}
+        contentContainerStyle={{ paddingHorizontal: 10}}
+        style={{ marginBottom: 25}}
       />
 
       {/* Popular Jobs */}
@@ -198,16 +139,15 @@ export default function JobSeekerHome({ navigation }) {
         </TouchableOpacity>
       </View>
       <FlatList
-        data={popularJobsSample}
+        data={popularJobs}
         keyExtractor={(item) => item.id}
         renderItem={renderPopularJob}
-        contentContainerStyle={{ paddingHorizontal: 10, paddingBottom: 50 }}
+        contentContainerStyle={{ paddingHorizontal: 10, paddingBottom: 50}}
         showsVerticalScrollIndicator={false}
       />
     </View>
   );
 }
-
 
 const styles = StyleSheet.create({
   container: {
@@ -284,96 +224,5 @@ const styles = StyleSheet.create({
     color: '#007bff',
     fontSize: 14,
     fontWeight: '600',
-  },
-  featuredJobCard: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 22,
-    marginRight: 16,
-    width: width * 0.7,
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 8,
-  },
-  companyLogo: {
-    width: 60,
-    height: 60,
-    borderRadius: 14,
-    marginBottom: 18,
-    alignSelf: 'center',
-  },
-  jobTitle: {
-    fontSize: 21,
-    fontWeight: '700',
-    color: '#212529',
-    marginBottom: 6,
-    textAlign: 'center',
-  },
-  companyName: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#6c757d',
-    marginBottom: 10,
-    textAlign: 'center',
-  },
-  location: {
-    fontSize: 13,
-    color: '#868e96',
-    marginBottom: 10,
-    textAlign: 'center',
-  },
-  salary: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#17a2b8',
-    marginBottom: 10,
-    textAlign: 'center',
-  },
-  jobType: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#6c757d',
-    textAlign: 'center',
-    textTransform: 'uppercase',
-    letterSpacing: 1.5,
-  },
-  popularJobCard: {
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    padding: 18,
-    marginBottom: 18,
-    flexDirection: 'row',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 6,
-  },
-  popularCompanyLogo: {
-    width: 54,
-    height: 54,
-    borderRadius: 14,
-  },
-  popularJobTitle: {
-    fontWeight: '700',
-    fontSize: 19,
-    color: '#212529',
-  },
-  popularCompanyName: {
-    color: '#868e96',
-    marginTop: 3,
-    fontSize: 14,
-  },
-  popularSalary: {
-    fontWeight: '700',
-    fontSize: 15,
-    color: '#17a2b8',
-  },
-  popularLocation: {
-    color: '#adb5bd',
-    fontSize: 13,
   },
 });

@@ -10,10 +10,15 @@ import {
   Dimensions,
   ScrollView,
   Animated,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons, FontAwesome } from '@expo/vector-icons';
 import FilterModal from './FilterModal';
 import SearchFilterJobsResultScreen from './SearchFilterJobsResultScreen';
+import { getJobs } from '../../api/job';
+import { JobCard } from '../../components/JobCard';
+import { LoadingSpinner } from '../../components/LoadingSpinner';
+import { ErrorMessage } from '../../components/ErrorMessage';
 
 const { width } = Dimensions.get('window');
 
@@ -78,6 +83,9 @@ export default function JobSearchScreen({ navigation }) {
   // const [recentSearches, setRecentSearches] = useState([]); // Nếu muốn lưu lịch sử tìm kiếm
   const [roleIndex, setRoleIndex] = useState(0);
   const [filterVisible, setFilterVisible] = useState(false);
+  const [searchResults, setSearchResults] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   const slideAnim = useRef(new Animated.Value(500)).current;
   const popularRolesFlatListRef = useRef(null);
@@ -165,19 +173,6 @@ export default function JobSearchScreen({ navigation }) {
     </View>
   );
 
-  // Danh sách job
-  const renderJobItem = ({ item }) => (
-    <View style={styles.jobCard}>
-      <Image source={{ uri: item.logo }} style={styles.jobLogo} />
-      <View style={{ flex: 1, marginLeft: 15 }}>
-        <Text style={styles.jobTitle}>{item.title}</Text>
-        <Text style={styles.jobCompany}>{item.company}</Text>
-        <Text style={styles.jobLocation}>{item.location}</Text>
-      </View>
-      <Text style={styles.jobSalary}>{item.salary}</Text>
-    </View>
-  );
-
   const openModal = () => {
     setFilterVisible(true);
     Animated.timing(slideAnim, {
@@ -199,6 +194,34 @@ export default function JobSearchScreen({ navigation }) {
     navigation.navigate('SearchFilterJobsResult', { filterData });
   };
 
+  const handleSearch = async (searchParams) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await getJobs(searchParams);
+      setSearchResults(response.results);
+    } catch (error) {
+      setError('Failed to search jobs. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const renderJobItem = ({ item }) => (
+    <JobCard
+      job={item}
+      onPress={() => navigation.navigate('JobDetail', { slug: item.slug })}
+    />
+  );
+
+  if (isLoading) {
+    return <LoadingSpinner />;
+  }
+
+  if (error) {
+    return <ErrorMessage message={error} onRetry={() => handleSearch({})} />;
+  }
+
   return (
     <View style={styles.container}>
       {renderHeader()}
@@ -208,7 +231,7 @@ export default function JobSearchScreen({ navigation }) {
         {renderPopularRoles()}
         <Text style={styles.jobsCount}><Text style={{ color: '#3b82f6', fontWeight: 'bold' }}>3271</Text> Jobs</Text>
         <FlatList
-          data={jobs}
+          data={searchResults}
           keyExtractor={(item) => item.id}
           renderItem={renderJobItem}
           scrollEnabled={false}
@@ -352,28 +375,32 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 3 },
     marginHorizontal: 18,
   },
-  jobLogo: {
+  companyLogo: {
     width: 48,
     height: 48,
     borderRadius: 12,
+  },
+  jobInfo: {
+    flex: 1,
+    marginLeft: 15,
   },
   jobTitle: {
     fontSize: 16,
     fontWeight: '700',
     color: '#222',
   },
-  jobCompany: {
+  companyName: {
     color: '#222',
     fontSize: 14,
     marginTop: 2,
     fontWeight: '500',
   },
-  jobLocation: {
+  location: {
     color: '#bdbdbd',
     fontSize: 13,
     marginTop: 2,
   },
-  jobSalary: {
+  salary: {
     fontWeight: '600',
     fontSize: 15,
     color: '#222',
