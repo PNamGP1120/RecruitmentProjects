@@ -1,8 +1,17 @@
-import React, {createContext, useState, useEffect} from 'react';
+import React, {createContext, useState, useEffect, useContext} from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {login as apiLogin, getCurrentUser, login} from '../api/auth';
 
 export const AuthContext = createContext();
+
+// Thêm hook useAuth
+export const useAuth = () => {
+    const context = useContext(AuthContext);
+    if (!context) {
+        throw new Error('useAuth phải được sử dụng trong AuthProvider');
+    }
+    return context;
+};
 
 export const AuthProvider = ({children}) => {
     const [userToken, setUserToken] = useState(null);

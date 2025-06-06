@@ -7,7 +7,7 @@ from .views import (
     RecruiterJobsViewSet,
     JobTypeListAPIView,
     JobStatusListAPIView,
-    JobRecommendAPIView,
+    JobRecommendAPIView, RecruiterProfileView, UploadCompanyLogo,
 )
 
 router = DefaultRouter()
@@ -17,10 +17,15 @@ router.register(r'jobs', JobPostingViewSet, basename='jobposting')
 urlpatterns = [
     path('', include(router.urls)),
 
+    path('recruiter-profile/', RecruiterProfileView.as_view(), name='recruiter-profile'),
+    path('recruiter-profile-upload-logo/', UploadCompanyLogo.as_view(), name='upload-company-logo'),
+
     # Admin quản lý duyệt tin tuyển dụng
     path('api/admin/jobs/pending/', AdminJobApprovalViewSet.as_view({'get': 'list'}), name='admin-jobs-pending'),
-    path('api/admin/jobs/<slug:slug>/approve/', AdminJobApprovalViewSet.as_view({'post': 'approve'}), name='admin-job-approve'),
-    path('api/admin/jobs/<slug:slug>/reject/', AdminJobApprovalViewSet.as_view({'post': 'reject'}), name='admin-job-reject'),
+    path('api/admin/jobs/<slug:slug>/approve/', AdminJobApprovalViewSet.as_view({'post': 'approve'}),
+         name='admin-job-approve'),
+    path('api/admin/jobs/<slug:slug>/reject/', AdminJobApprovalViewSet.as_view({'post': 'reject'}),
+         name='admin-job-reject'),
 
     # Lấy danh sách tin tuyển dụng theo recruiter
     path('recruiters/<uuid:recruiter_id>/jobs/', RecruiterJobsViewSet.as_view({'get': 'list'}), name='recruiter-jobs'),
