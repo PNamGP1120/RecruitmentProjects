@@ -8,6 +8,9 @@ import {
   TouchableOpacity,
   Alert,
 } from 'react-native';
+import { getJobDetail } from '../../api/job';
+import { LoadingSpinner } from '../../components/LoadingSpinner';
+import { ErrorMessage } from '../../components/ErrorMessage';
 
 const sampleJobs = [
   {
@@ -31,27 +34,34 @@ const sampleJobs = [
 ];
 
 export default function JobDetailScreen({ route, navigation }) {
-  const { jobId } = route.params;
+  const { slug } = route.params;
   const [job, setJob] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    // Ở đây bạn có thể fetch data chi tiết từ backend qua jobId
-    // Hiện tại lấy từ sampleJobs
-    const foundJob = sampleJobs.find((j) => j.id === jobId);
-    if (!foundJob) {
-      Alert.alert('Thông báo', 'Không tìm thấy công việc');
-      navigation.goBack();
-    } else {
-      setJob(foundJob);
-    }
-  }, [jobId]);
+    fetchJobDetail();
+  }, [slug]);
 
-  if (!job) {
-    return (
-      <View style={styles.loadingContainer}>
-        <Text>Đang tải chi tiết công việc...</Text>
-      </View>
-    );
+  const fetchJobDetail = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const data = await getJobDetail(slug);
+      setJob(data);
+    } catch (error) {
+      setError('Failed to load job details. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (isLoading) {
+    return <LoadingSpinner />;
+  }
+
+  if (error) {
+    return <ErrorMessage message={error} onRetry={fetchJobDetail} />;
   }
 
   const handleApply = () => {
@@ -62,22 +72,17 @@ export default function JobDetailScreen({ route, navigation }) {
   return (
     <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 30 }}>
       <View style={styles.header}>
-        <Image source={{ uri: job.logo }} style={styles.logo} />
-        <View style={{ flex: 1, marginLeft: 15 }}>
+        <Image 
+          source={{ 
+            uri: job.recruiter_profile?.company_logo || 'https://via.placeholder.com/150'
+          }} 
+          style={styles.logo} 
+        />
+        <View style={styles.headerInfo}>
           <Text style={styles.title}>{job.title}</Text>
-          <Text style={styles.company}>{job.company}</Text>
+          <Text style={styles.company}>{job.recruiter_profile?.company_name}</Text>
           <Text style={styles.location}>{job.location}</Text>
         </View>
-      </View>
-
-      <View style={styles.infoRow}>
-        <Text style={styles.label}>Loại công việc:</Text>
-        <Text style={styles.value}>{job.jobType}</Text>
-      </View>
-
-      <View style={styles.infoRow}>
-        <Text style={styles.label}>Mức lương:</Text>
-        <Text style={styles.value}>{job.salary}</Text>
       </View>
 
       <View style={styles.section}>
@@ -87,9 +92,21 @@ export default function JobDetailScreen({ route, navigation }) {
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Yêu cầu</Text>
-        {job.requirements.map((req, index) => (
-          <Text key={index} style={styles.requirement}>• {req}</Text>
-        ))}
+        <Text style={styles.requirements}>{job.requirements || 'Không có yêu cầu cụ thể'}</Text>
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Thông tin khác</Text>
+        <View style={styles.infoRow}>
+          <Text style={styles.label}>Loại công việc:</Text>
+          <Text style={styles.value}>{job.job_type}</Text>
+        </View>
+        <View style={styles.infoRow}>
+          <Text style={styles.label}>Mức lương:</Text>
+          <Text style={styles.value}>
+            {formatSalary(job.salary_min, job.salary_max)}
+          </Text>
+        </View>
       </View>
 
       <TouchableOpacity style={styles.applyButton} onPress={handleApply}>
@@ -121,6 +138,10 @@ const styles = StyleSheet.create({
     height: 70,
     borderRadius: 12,
   },
+  headerInfo: {
+    flex: 1,
+    marginLeft: 15,
+  },
   title: {
     fontSize: 22,
     fontWeight: '700',
@@ -136,19 +157,6 @@ const styles = StyleSheet.create({
     color: '#888',
     marginTop: 3,
   },
-  infoRow: {
-    flexDirection: 'row',
-    marginBottom: 10,
-  },
-  label: {
-    fontWeight: '600',
-    width: 110,
-    color: '#555',
-  },
-  value: {
-    color: '#333',
-    flexShrink: 1,
-  },
   section: {
     marginVertical: 15,
   },
@@ -162,10 +170,23 @@ const styles = StyleSheet.create({
     color: '#444',
     lineHeight: 22,
   },
-  requirement: {
+  requirements: {
     fontSize: 15,
     color: '#444',
-    marginVertical: 2,
+    lineHeight: 22,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    marginBottom: 10,
+  },
+  label: {
+    fontWeight: '600',
+    width: 110,
+    color: '#555',
+  },
+  value: {
+    color: '#333',
+    flexShrink: 1,
   },
   applyButton: {
     marginTop: 25,
@@ -180,3 +201,11 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
 });
+
+// Helper function to format salary
+const formatSalary = (min, max) => {
+  if (!min && !max) return 'Thỏa thuận';
+  if (!min) return `${max.toLocaleString()} VNĐ`;
+  if (!max) return `Từ ${min.toLocaleString()} VNĐ`;
+  return `${min.toLocaleString()} - ${max.toLocaleString()} VNĐ`;
+};

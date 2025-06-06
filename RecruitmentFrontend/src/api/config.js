@@ -1,4 +1,4 @@
-export const API_URL = 'http://192.168.1.6:8000';
+export const API_URL = 'http://192.168.100.222:8000';
 
 export const ENDPOINTS = {
     // Xac thuc, phan quyen
@@ -42,6 +42,11 @@ export const ENDPOINTS = {
     RESUME_DETAIL: (uuid) => `/resumes/${uuid}/`,
     AVATAR_UPLOAD: '/auth/avatar_upload/',
     SKILLS: '/skills/',
+
+    // Job Seeker Profile
+    JOB_SEEKER_PROFILE: '/job-seeker-profiles/me/',
+    JOB_SEEKER_PROFILE_CREATE: '/job-seeker-profiles/',
+    JOB_SEEKER_PROFILE_UPDATE: (id) => `/job-seeker-profiles/${id}/`,
 
     // Jobs
     JOBS: '/jobs/',

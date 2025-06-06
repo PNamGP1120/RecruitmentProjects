@@ -3,7 +3,7 @@ import React, { useEffect, useState, useContext } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, Alert, ActivityIndicator, TextInput, WebView } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
-import { getResumes, uploadResume, deleteResume, getResumeDetail } from '../../api/user';
+import { getResumes, uploadResume, deleteResume, getResumeDetail} from '../../api/resume';
 import { AuthContext } from '../../contexts/AuthContext';
 
 export default function CVListScreen({ navigation }) {
