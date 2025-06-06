@@ -47,4 +47,10 @@ export const ENDPOINTS = {
     JOB_SEEKER_PROFILE: '/job-seeker-profiles/me/',
     JOB_SEEKER_PROFILE_CREATE: '/job-seeker-profiles/',
     JOB_SEEKER_PROFILE_UPDATE: (id) => `/job-seeker-profiles/${id}/`,
+
+    // Jobs
+    JOBS: '/jobs/',
+    JOB_DETAIL: (id) => `/jobs/${id}/`,
+    RECRUITER_JOBS: (userId) => `/recruiters/${userId}/jobs/`,
+    JOB_STATUS: (id) => `/jobs/${id}/status/`,
 };

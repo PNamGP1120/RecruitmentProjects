@@ -1,17 +1,10 @@
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action
-from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
-from django_filters.rest_framework import DjangoFilterBackend
-from django.db.models import Q
+from rest_framework.response import Response
+
 from .models import RecruiterProfile, JobPosting
-from .serializers import (
-    RecruiterProfileSerializer,
-    JobPostingSerializer,
-    JobPostingRecommendSerializer,
-    JobTypeSerializer,
-    JobStatusSerializer,
-)
 from .permissions import (
     IsAdmin,
     IsRecruiter,
@@ -19,6 +12,10 @@ from .permissions import (
     IsAuthenticatedAndApproved,
     IsOwnerOrAdmin,
     IsRecruiterOwnerOrAdmin,
+)
+from .serializers import (
+    RecruiterProfileSerializer,
+    JobPostingSerializer,
 )
 
 
@@ -147,11 +144,26 @@ class AdminJobApprovalViewSet(viewsets.ViewSet):
 
 class RecruiterJobsViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = JobPostingSerializer
-    permission_classes = [IsOwnerOrAdmin]
+    permission_classes = [IsRecruiterOwnerOrAdmin]
 
     def get_queryset(self):
         recruiter_id = self.kwargs.get('recruiter_id')
-        return JobPosting.objects.filter(recruiter_profile__id=recruiter_id)
+        # print(recruiter_id)
+        # Kiểm tra xem recruiter_id có tồn tại không và có phải là UUID hợp lệ không
+        if recruiter_id:
+            try:
+                # Kiểm tra xem recruiter_profile có tồn tại trong DB không
+                recruiter_profile = RecruiterProfile.objects.get(user_id=recruiter_id)
+                print(recruiter_profile)
+                return JobPosting.objects.filter(recruiter_profile=recruiter_profile)
+                # return JobPosting.objects.all()
+            except RecruiterProfile.DoesNotExist:
+                # print('ssssssssssssssssssssssssssssssssssssssssssssssssssss')
+                # Nếu không tìm thấy recruiter profile, trả về danh sách rỗng hoặc thông báo lỗi
+                return JobPosting.objects.none()
+        else:
+            # Nếu không có recruiter_id, trả về danh sách rỗng hoặc tất cả tin tuyển dụng
+            return JobPosting.objects.none()
 
 
 from rest_framework.views import APIView
