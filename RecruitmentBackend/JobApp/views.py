@@ -3,7 +3,7 @@ from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
-
+from rest_framework.views import APIView
 from .models import RecruiterProfile, JobPosting
 from .permissions import (
     IsAdmin,
@@ -18,7 +18,94 @@ from .serializers import (
     JobPostingSerializer,
 )
 
+class UploadCompanyLogo(APIView):
+    permission_classes = [IsRecruiter]  # Chỉ cho phép người đã đăng nhập
 
+    def post(self, request):
+        try:
+            # Lấy thông tin RecruiterProfile của user hiện tại
+            recruiter_profile = request.user.recruiter_profile
+            if 'company_logo' not in request.data:
+                return Response({"detail": "Không tìm thấy tệp logo."}, status=status.HTTP_400_BAD_REQUEST)
+
+            company_logo = request.data['company_logo']
+
+            # Cập nhật logo công ty trong RecruiterProfile
+            recruiter_profile.company_logo = company_logo
+            recruiter_profile.save()
+
+            return Response({
+                'company_logo': recruiter_profile.company_logo.url,
+                'message': 'Logo công ty đã được cập nhật thành công.'
+            }, status=status.HTTP_200_OK)
+        except RecruiterProfile.DoesNotExist:
+            return Response({"detail": "Bạn chưa có hồ sơ nhà tuyển dụng."}, status=status.HTTP_404_NOT_FOUND)
+
+class RecruiterProfileView(APIView):
+    permission_classes = [IsRecruiter]  # Chỉ cho phép người dùng đã đăng nhập và chủ sở hữu hoặc admin
+
+    def get(self, request):
+        try:
+            # Lấy thông tin RecruiterProfile của user hiện tại
+            recruiter_profile = request.user.recruiter_profile
+            # Sử dụng serializer để trả về thông tin RecruiterProfile
+            recruiter_serializer = RecruiterProfileSerializer(recruiter_profile)
+            return Response(recruiter_serializer.data)
+            #
+            # # Lấy tất cả các tin tuyển dụng của nhà tuyển dụng này
+            # jobs = JobPosting.objects.filter(recruiter_profile=recruiter_profile)
+            # jobs_serializer = JobPostingSerializer(jobs, many=True)
+            #
+            # return Response({
+            #     'recruiter_profile': recruiter_serializer.data,
+            #     'job_postings': jobs_serializer.data
+            # })
+        except RecruiterProfile.DoesNotExist:
+            return Response({"detail": "Bạn chưa có hồ sơ nhà tuyển dụng."}, status=status.HTTP_404_NOT_FOUND)
+
+    def put(self, request):
+        try:
+            # Lấy thông tin RecruiterProfile của user hiện tại
+            recruiter_profile = request.user.recruiter_profile
+            # Cập nhật thông tin RecruiterProfile
+            recruiter_serializer = RecruiterProfileSerializer(recruiter_profile, data=request.data)
+
+            if recruiter_serializer.is_valid():
+                recruiter_serializer.save()
+                return Response(recruiter_serializer.data, status=status.HTTP_200_OK)
+            return Response(recruiter_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        except RecruiterProfile.DoesNotExist:
+            return Response({"detail": "Bạn chưa có hồ sơ nhà tuyển dụng."}, status=status.HTTP_404_NOT_FOUND)
+
+    def patch(self, request):
+        try:
+            # Lấy thông tin RecruiterProfile của user hiện tại
+            recruiter_profile = request.user.recruiter_profile
+            # Cập nhật thông tin RecruiterProfile một phần (PATCH request)
+            recruiter_serializer = RecruiterProfileSerializer(recruiter_profile, data=request.data, partial=True)
+
+            if recruiter_serializer.is_valid():
+                recruiter_serializer.save()
+                return Response(recruiter_serializer.data, status=status.HTTP_200_OK)
+            return Response(recruiter_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        except RecruiterProfile.DoesNotExist:
+            return Response({"detail": "Bạn chưa có hồ sơ nhà tuyển dụng."}, status=status.HTTP_404_NOT_FOUND)
+
+    def delete(self, request):
+        try:
+            # Lấy thông tin RecruiterProfile của user hiện tại
+            recruiter_profile = request.user.recruiter_profile
+            # Xóa tin tuyển dụng liên quan đến recruiter
+            JobPosting.objects.filter(recruiter_profile=recruiter_profile).delete()
+
+            # Xóa RecruiterProfile
+            recruiter_profile.delete()
+            return Response({"detail": "Hồ sơ nhà tuyển dụng đã bị xóa thành công."}, status=status.HTTP_204_NO_CONTENT)
+
+        except RecruiterProfile.DoesNotExist:
+            return Response({"detail": "Bạn chưa có hồ sơ nhà tuyển dụng."}, status=status.HTTP_404_NOT_FOUND)
 class RecruiterProfileViewSet(viewsets.ModelViewSet):
     queryset = RecruiterProfile.objects.all()
     serializer_class = RecruiterProfileSerializer

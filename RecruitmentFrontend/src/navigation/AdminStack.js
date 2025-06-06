@@ -1,19 +1,260 @@
 // src/navigation/AdminStack.js
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { MaterialIcons } from '@expo/vector-icons';
+import AdminDrawer from './AdminDrawer';
 
-import AdminDashboard from '../screens/Admin/AdminDashboard';
-import PendingRecruitersScreen from '../screens/Admin/PendingRecruitersScreen';
-import AssignAdminScreen from '../screens/Admin/AssignAdminScreen';
+// Import các screens
+import UserDetail from '../screens/Admin/UserManagement/UserDetail';
+import JobDetail from '../screens/Admin/JobManagement/JobDetail';
+import AddEditSkill from '../screens/Admin/SkillManagement/AddEditSkill';
+import UserStats from '../screens/Admin/Reports/UserStats';
+import ActivityLogs from '../screens/Admin/Reports/ActivityLogs';
+import Overview from '../screens/Admin/Reports/Overview';
+import PendingJobs from '../screens/Admin/JobManagement/PendingJobs';
+import PendingRoles from '../screens/Admin/UserManagement/PendingRoles';
+import Settings from '../screens/Admin/Settings';
+import UserList from '../screens/Admin/UserManagement/UserList';
+import AssignAdmin from '../screens/Admin/UserManagement/AssignAdmin';
 
 const Stack = createNativeStackNavigator();
 
-export default function AdminStack() {
+const AdminStack = () => {
+  const screenOptions = {
+    headerStyle: {
+      backgroundColor: '#1976D2',
+    },
+    headerTintColor: '#fff',
+    headerTitleStyle: {
+      fontWeight: 'bold',
+    },
+    // Animation cho iOS
+    animation: 'slide_from_right',
+    // Thêm back button với icon tùy chỉnh
+    headerBackTitleVisible: false,
+    headerBackImage: () => (
+      <MaterialIcons name="arrow-back" size={24} color="#fff" style={{ marginLeft: 8 }} />
+    ),
+    headerShown: false,
+  };
+
   return (
-    <Stack.Navigator id="admin-stack" initialRouteName="AdminDashboard" screenOptions={{ headerShown: true }}>
-      <Stack.Screen name="AdminDashboard" component={AdminDashboard} options={{ title: 'Dashboard' }} />
-      <Stack.Screen name="PendingRecruiters" component={PendingRecruitersScreen} options={{ title: 'Nhà tuyển dụng chờ duyệt' }} />
-      <Stack.Screen name="AssignAdmin" component={AssignAdminScreen} options={{ title: 'Gán quyền Admin' }} />
+    <Stack.Navigator
+      initialRouteName="AdminDrawer"
+      screenOptions={screenOptions}
+
+    >
+      {/* Main Drawer */}
+      <Stack.Screen
+        name="AdminDrawer"
+        component={AdminDrawer}
+        options={{
+          headerShown: false,
+        }}
+      />
+
+      {/* User Management */}
+      <Stack.Screen
+        name="UserDetail"
+        component={UserDetail}
+        options={({ route }) => ({
+          title: route.params?.userId ? 'Chi tiết người dùng' : 'Thêm người dùng',
+          headerRight: () => (
+            route.params?.userId ? (
+              <MaterialIcons
+                name="delete"
+                size={24}
+                color="#fff"
+                style={{ marginRight: 16 }}
+                onPress={() => {
+                  // Xử lý xóa user
+                }}
+              />
+            ) : null
+          ),
+        })}
+      />
+
+      <Stack.Screen
+        name="PendingRoles"
+        component={PendingRoles}
+        options={{
+          title: 'Phê duyệt vai trò',
+          headerRight: () => (
+            <MaterialIcons
+              name="refresh"
+              size={24}
+              color="#fff"
+              style={{ marginRight: 16 }}
+              onPress={() => {
+                // Refresh data
+              }}
+            />
+          ),
+        }}
+      />
+
+      {/* Job Management */}
+      <Stack.Screen
+        name="JobDetail"
+        component={JobDetail}
+        options={({ route }) => ({
+          title: 'Chi tiết công việc',
+          headerRight: () => (
+            <MaterialIcons
+              name="more-vert"
+              size={24}
+              color="#fff"
+              style={{ marginRight: 16 }}
+              onPress={() => {
+                // Show options menu
+              }}
+            />
+          ),
+        })}
+      />
+
+      <Stack.Screen
+        name="PendingJobs"
+        component={PendingJobs}
+        options={{
+          title: 'Việc làm chờ duyệt',
+          headerRight: () => (
+            <MaterialIcons
+              name="filter-list"
+              size={24}
+              color="#fff"
+              style={{ marginRight: 16 }}
+              onPress={() => {
+                // Show filter options
+              }}
+            />
+          ),
+        }}
+      />
+
+      {/* Skill Management */}
+      <Stack.Screen
+        name="AddEditSkill"
+        component={AddEditSkill}
+        options={({ route }) => ({
+          title: route.params?.skillId ? 'Chỉnh sửa kỹ năng' : 'Thêm kỹ năng',
+        })}
+      />
+
+      {/* Reports */}
+      <Stack.Screen
+        name="Overview"
+        component={Overview}
+        options={{
+          title: 'Tổng quan',
+          headerRight: () => (
+            <MaterialIcons
+              name="date-range"
+              size={24}
+              color="#fff"
+              style={{ marginRight: 16 }}
+              onPress={() => {
+                // Show date range picker
+              }}
+            />
+          ),
+        }}
+      />
+
+      <Stack.Screen
+        name="UserStats"
+        component={UserStats}
+        options={{
+          title: 'Thống kê người dùng',
+          headerRight: () => (
+            <MaterialIcons
+              name="download"
+              size={24}
+              color="#fff"
+              style={{ marginRight: 16 }}
+              onPress={() => {
+                // Export data
+              }}
+            />
+          ),
+        }}
+      />
+
+      <Stack.Screen
+        name="ActivityLogs"
+        component={ActivityLogs}
+        options={{
+          title: 'Lịch sử hoạt động',
+          headerRight: () => (
+            <MaterialIcons
+              name="filter-list"
+              size={24}
+              color="#fff"
+              style={{ marginRight: 16 }}
+              onPress={() => {
+                // Show filter options
+              }}
+            />
+          ),
+        }}
+      />
+
+      <Stack.Screen
+        name="UserList"
+        component={UserList}
+        options={{
+          title: 'Quản lý người dùng',
+        }}
+      />
+
+      <Stack.Screen
+        name="AssignAdmin"
+        component={AssignAdmin}
+        options={{
+          title: 'Gán quyền Admin',
+        }}
+      />
+
+      {/* Settings */}
+      <Stack.Screen
+        name="Settings"
+        component={Settings}
+        options={{
+          title: 'Cài đặt',
+        }}
+      />
     </Stack.Navigator>
   );
-}
+};
+
+// Các helper functions cho navigation
+export const adminNavigationRef = React.createRef();
+
+export const navigateToAdminScreen = (name, params) => {
+  if (adminNavigationRef.current) {
+    adminNavigationRef.current.navigate(name, params);
+  }
+};
+
+export const goBack = () => {
+  if (adminNavigationRef.current) {
+    adminNavigationRef.current.goBack();
+  }
+};
+
+// Custom hook để sử dụng trong các components
+export const useAdminNavigation = () => {
+  return {
+    navigateToAdminScreen,
+    goBack,
+  };
+};
+
+const styles = {
+  headerButton: {
+    marginRight: 16,
+  },
+};
+
+export default AdminStack;

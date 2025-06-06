@@ -1,9 +1,11 @@
 from rest_framework import serializers
 from .models import RecruiterProfile, JobPosting, JobType, JobStatus
 
+
 class RecruiterProfileSerializer(serializers.ModelSerializer):
     # Hiển thị username của user gán recruiter (read-only)
     user = serializers.StringRelatedField(read_only=True)
+    company_logo = serializers.SerializerMethodField()
 
     class Meta:
         model = RecruiterProfile
@@ -12,6 +14,15 @@ class RecruiterProfileSerializer(serializers.ModelSerializer):
             'industry', 'address', 'company_logo', 'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'user', 'created_at', 'updated_at']
+
+
+    def get_company_logo(self, obj):
+        """
+        Trả về URL của logo công ty từ Cloudinary.
+        """
+        if obj.company_logo:
+            return obj.company_logo.url  # Lấy URL của ảnh từ Cloudinary
+        return None  # Nếu không có logo, trả về None
 
 
 class JobPostingSerializer(serializers.ModelSerializer):
