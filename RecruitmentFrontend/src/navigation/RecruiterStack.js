@@ -17,13 +17,15 @@ import ProfileScreen from '../screens/Recruiter/ProfileScreen';
 import RecruitScreen from '../screens/Recruiter/RecruitScreen';
 import ReportScreen from '../screens/Recruiter/ReportScreen';
 import ScheduleInterviewScreen from '../screens/Recruiter/ScheduleInterviewScreen';
+import JobDetailScreen from '../screens/Recruiter/JobDetailScreen';
+import EditJobScreen from '../screens/Recruiter/EditJobScreen';
 
 const Stack = createNativeStackNavigator();
 const Drawer = createDrawerNavigator();
 
 // Stack Navigator chính chứa tất cả các màn hình
 const MainStack = () => (
-    <Stack.Navigator 
+    <Stack.Navigator
         screenOptions={{
             headerShown: true,
             headerStyle: {
@@ -40,71 +42,88 @@ const MainStack = () => (
         />
 
         {/* Nhóm màn hình quản lý việc làm */}
-        <Stack.Screen 
-            name="Jobs" 
-            component={JobsScreen} 
+        <Stack.Screen
+            name="Jobs"
+            component={JobsScreen}
             options={{ title: 'Quản lý việc làm' }}
         />
-        <Stack.Screen 
-            name="CreateJob" 
-            component={CreateJobScreen} 
+        <Stack.Screen
+            name="CreateJob"
+            component={CreateJobScreen}
             options={{ title: 'Đăng tin tuyển dụng' }}
         />
 
         {/* Nhóm màn hình quản lý ứng viên */}
-        <Stack.Screen 
-            name="CandidateList" 
-            component={CandidateListScreen} 
+        <Stack.Screen
+            name="CandidateList"
+            component={CandidateListScreen}
             options={{ title: 'Danh sách ứng viên' }}
         />
-        <Stack.Screen 
-            name="CandidateProfile" 
-            component={CandidateProfileScreen} 
+        <Stack.Screen
+            name="CandidateProfile"
+            component={CandidateProfileScreen}
             options={{ title: 'Hồ sơ ứng viên' }}
         />
-        <Stack.Screen 
-            name="Recruit" 
-            component={RecruitScreen} 
+        <Stack.Screen
+            name="Recruit"
+            component={RecruitScreen}
             options={{ title: 'Tuyển dụng' }}
         />
-        <Stack.Screen 
-            name="ScheduleInterview" 
-            component={ScheduleInterviewScreen} 
+        <Stack.Screen
+            name="ScheduleInterview"
+            component={ScheduleInterviewScreen}
             options={{ title: 'Lịch phỏng vấn' }}
         />
 
         {/* Nhóm màn hình chat */}
-        <Stack.Screen 
-            name="Chat" 
-            component={ChatScreen} 
+        <Stack.Screen
+            name="Chat"
+            component={ChatScreen}
             options={{ title: 'Chat' }}
         />
-        <Stack.Screen 
-            name="Conversations" 
-            component={ConversationsScreen} 
+        <Stack.Screen
+            name="Conversations"
+            component={ConversationsScreen}
             options={{ title: 'Tin nhắn' }}
         />
 
         {/* Nhóm màn hình thông tin và cài đặt */}
-        <Stack.Screen 
-            name="Home" 
-            component={HomeScreen} 
+        <Stack.Screen
+            name="Home"
+            component={HomeScreen}
             options={{ title: 'Trang chủ' }}
         />
-        <Stack.Screen 
-            name="Profile" 
-            component={ProfileScreen} 
+        <Stack.Screen
+            name="Profile"
+            component={ProfileScreen}
             options={{ title: 'Tài khoản' }}
         />
-        <Stack.Screen 
-            name="CompanyProfile" 
-            component={CompanyProfileScreen} 
+        <Stack.Screen
+            name="CompanyProfile"
+            component={CompanyProfileScreen}
             options={{ title: 'Thông tin công ty' }}
         />
-        <Stack.Screen 
-            name="Report" 
-            component={ReportScreen} 
+        <Stack.Screen
+            name="Report"
+            component={ReportScreen}
             options={{ title: 'Báo cáo' }}
+        />
+
+        <Stack.Screen
+            name="JobDetail"
+            component={JobDetailScreen}
+            options={{
+                title: 'Chi tiết tin tuyển dụng',
+                headerShown: false
+
+            }}
+        />
+        <Stack.Screen
+            name="EditJob"
+            component={EditJobScreen}
+            options={{
+                headerShown: false
+            }}
         />
     </Stack.Navigator>
 );
@@ -123,8 +142,8 @@ export default function RecruiterStack() {
             }}
             drawerContent={props => <RecruiterDrawer {...props} />}
         >
-            <Drawer.Screen 
-                name="MainStack" 
+            <Drawer.Screen
+                name="MainStack"
                 component={MainStack}
                 options={{ title: 'Trang chủ' }}
             />

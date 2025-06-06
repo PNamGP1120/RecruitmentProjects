@@ -49,7 +49,7 @@ export default function JobSeekerProfileEditScreen({ navigation }) {
       try {
         // Lấy profile từ API backend
         const res = await fetch(
-          `http://192.168.2.178:8000/job-seeker-profiles/me/`,
+          `http://192.168.1.6:8000/job-seeker-profiles/me/`,
           {
             headers: { Authorization: `Bearer ${userToken}` },
           }
@@ -156,7 +156,7 @@ export default function JobSeekerProfileEditScreen({ navigation }) {
     try {
       if (!profile.id) {
         // Chưa có profile, gọi POST
-        const res = await fetch('http://192.168.2.178:8000/job-seeker-profiles/', {
+        const res = await fetch('http://192.168.1.6:8000/job-seeker-profiles/', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -180,7 +180,7 @@ export default function JobSeekerProfileEditScreen({ navigation }) {
       } else {
         // Đã có profile, PATCH như cũ
         const res = await fetch(
-          `http://192.168.2.178:8000/job-seeker-profiles/${profile.id}/`,
+          `http://192.168.1.6:8000/job-seeker-profiles/${profile.id}/`,
           {
             method: 'PATCH',
             headers: {
