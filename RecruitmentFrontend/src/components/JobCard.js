@@ -2,25 +2,27 @@ import React from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
 
 export const JobCard = ({ job, onPress }) => {
-  return (
-    <TouchableOpacity style={styles.jobCard} onPress={onPress}>
-      <Image
-        source={{ uri: job.recruiter_profile?.company_logo_url }}
-        style={styles.companyLogo}
-      />
-      <View style={styles.jobInfo}>
-        <Text style={styles.jobTitle}>{job.title}</Text>
-        <Text style={styles.companyName}>
-          {job.recruiter_profile?.company_name || 'Công ty'}
-        </Text>
-        <Text style={styles.location}>{job.location}</Text>
-        <Text style={styles.salary}>
-          {formatSalary(job.salary_min, job.salary_max)}
-        </Text>
-      </View>
-    </TouchableOpacity>
-  );
-};
+    return (
+      <TouchableOpacity style={styles.jobCard} onPress={onPress}>
+        <Image
+          source={{ 
+            uri: job.recruiter_profile?.company_logo || 'https://via.placeholder.com/150'
+          }}
+          style={styles.companyLogo}
+        />
+        <View style={styles.jobInfo}>
+          <Text style={styles.jobTitle}>{job.title}</Text>
+          <Text style={styles.companyName}>
+            {job.recruiter_profile?.company_name || 'Công ty'}
+          </Text>
+          <Text style={styles.location}>{job.location}</Text>
+          <Text style={styles.salary}>
+            {formatSalary(job.salary_min, job.salary_max)}
+          </Text>
+        </View>
+      </TouchableOpacity>
+    );
+  };
 
 const styles = StyleSheet.create({
   jobCard: {
