@@ -14,7 +14,7 @@ class ApplicationSerializer(serializers.ModelSerializer):
     resume_detail = ResumeSerializer(source='resume', read_only=True)
 
     # Giữ lại các trường ID cho việc tạo/cập nhật
-    job_posting = JobPostingSerializer(read_only=True)
+    job_posting = serializers.PrimaryKeyRelatedField(queryset=JobPosting.objects.all(), write_only=True)
     resume = serializers.PrimaryKeyRelatedField(queryset=Resume.objects.all(), required=False, allow_null=True,
                                                 write_only=True)
 
@@ -77,6 +77,7 @@ class InterviewSerializer(serializers.ModelSerializer):
             'updated_at'
         ]
         read_only_fields = ['location', 'status', 'created_at', 'updated_at']
+
 
 class InterviewStatusUpdateSerializer(serializers.ModelSerializer):
     class Meta:

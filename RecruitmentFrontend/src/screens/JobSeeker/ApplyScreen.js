@@ -8,6 +8,7 @@ import { getJobDetail } from '../../api/job';
 import { createApplication } from '../../api/application';
 import { apiRequest } from '../../api/request';
 import { ENDPOINTS } from '../../api/config';
+import { getApplications } from '../../api/application';
 
 export default function ApplyScreen({ route, navigation }) {
   const { userToken, userInfo } = useAuth();
@@ -19,6 +20,7 @@ export default function ApplyScreen({ route, navigation }) {
   const [coverLetter, setCoverLetter] = useState('');
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [alreadyApplied, setAlreadyApplied] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -37,6 +39,12 @@ export default function ApplyScreen({ route, navigation }) {
       // Chọn resume mặc định
       const activeResume = (resumesRes.results || resumesRes).find(r => r.is_active);
       setSelectedResume(activeResume ? activeResume.id : (resumesRes.results?.[0]?.id || resumesRes[0]?.id));
+
+      // Kiểm tra đã ứng tuyển chưa
+      const apps = await getApplications(userToken, { job_posting: jobRes.id });
+      if (apps.results && apps.results.length > 0) {
+        setAlreadyApplied(true);
+      }
     } catch (e) {
       Alert.alert('Lỗi', 'Không thể tải dữ liệu');
     }
@@ -136,12 +144,19 @@ export default function ApplyScreen({ route, navigation }) {
 
       {/* Apply button */}
       <TouchableOpacity
-        style={styles.applyButton}
+        style={[styles.applyButton, alreadyApplied && { backgroundColor: '#ccc' }]}
         onPress={handleApply}
-        disabled={submitting}
+        disabled={submitting || alreadyApplied}
       >
-        <Text style={styles.applyButtonText}>Apply</Text>
+        <Text style={styles.applyButtonText}>
+          {alreadyApplied ? 'Đã ứng tuyển' : 'Apply'}
+        </Text>
       </TouchableOpacity>
+      {alreadyApplied && (
+        <Text style={{ color: 'red', textAlign: 'center', marginTop: 8 }}>
+          Bạn đã ứng tuyển công việc này!
+        </Text>
+      )}
     </View>
   );
 }

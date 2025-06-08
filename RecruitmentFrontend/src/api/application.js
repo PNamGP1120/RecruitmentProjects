@@ -17,3 +17,11 @@ export const createApplication = async (token, data) => {
   // data: { job_posting, resume, cover_letter }
   return apiRequest(ENDPOINTS.CREATE_APPLICATION, 'POST', token, data);
 };
+
+export const getApplicationDetail = async (token, id) => {
+  return apiRequest(ENDPOINTS.APPLICATION_DETAIL(id), 'GET', token);
+};
+
+export const withdrawApplication = async (token, id) => {
+  return apiRequest(ENDPOINTS.APPLICATION_WITHDRAW(id), 'POST', token);
+};  

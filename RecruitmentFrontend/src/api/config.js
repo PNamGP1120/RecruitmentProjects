@@ -57,6 +57,8 @@ export const ENDPOINTS = {
     //Applications
     MY_APPLICATIONS: '/applications/',
     CREATE_APPLICATION: '/applications/',
+    APPLICATION_DETAIL: (id) => `/applications/${id}/`,
+    APPLICATION_WITHDRAW: (id) => `/applications/${id}/withdraw/`,
 
     ADMIN: {
         // Users Management

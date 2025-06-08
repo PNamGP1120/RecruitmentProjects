@@ -64,10 +64,10 @@ class ApplicationViewSet(viewsets.ModelViewSet):
     def recruiter_applications(self, request):
         job_posting_id = request.query_params.get('job_posting')
         # apps = Application.objects.filter(job_posting__recruiter=request.user, job_posting_id=job_posting_id)
-
         apps = Application.objects.filter(job_posting__recruiter_profile__user=request.user)
         serializer = self.get_serializer(apps, many=True)
         return Response(serializer.data)
+
 
 class InterviewViewSet(viewsets.ModelViewSet):
     queryset = Interview.objects.all()

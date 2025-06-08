@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
 import { getApplications } from '../../api/application';
+import { useNavigation } from '@react-navigation/native';
 
 const FILTERS = [
   { key: 'all', label: 'All' },
@@ -49,6 +50,7 @@ export default function ApplicationStatusScreen() {
   const [loading, setLoading] = useState(true);
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [total, setTotal] = useState(0);
+  const navigation = useNavigation();
 
   useEffect(() => {
     fetchApplications();
@@ -94,42 +96,48 @@ export default function ApplicationStatusScreen() {
   );
 
   const renderItem = ({ item }) => {
-    const job = item.job_posting || {};
+    const job = item.job_posting_detail || item.job_posting || {};
     const recruiter = job.recruiter_profile || {};
+    const workLocation = job.location;
+    const companyAddress = recruiter.address;
     const statusDisplay = item.status_display || '';
     const salary =
       job.salary_min && job.salary_max
         ? `${parseInt(job.salary_min, 10).toLocaleString()} - ${parseInt(job.salary_max, 10).toLocaleString()}`
         : '';
     return (
-      <View style={styles.card}>
-        <Image
-          source={{ uri: recruiter.company_logo || 'https://via.placeholder.com/48' }}
-          style={styles.logo}
-        />
-        <View style={{ flex: 1 }}>
-          <Text style={styles.jobTitle}>{item.job_posting_title || job.title}</Text>
-          <Text style={styles.company}>{recruiter.company_name}</Text>
-          <View style={styles.row}>
-            <Text style={styles.salary}>{salary ? `${salary} USD` : ''}</Text>
-            <Text style={styles.location}>{recruiter.address || job.location}</Text>
-          </View>
-          <View style={styles.row}>
-            <View style={[
-              styles.statusTag,
-              { backgroundColor: STATUS_COLORS[statusDisplay] || '#E0E7FF' }
-            ]}>
-              <Text style={{
-                color: STATUS_TEXT_COLORS[statusDisplay] || '#6366F1',
-                fontWeight: 'bold'
-              }}>
-                {statusDisplay}
-              </Text>
+      <TouchableOpacity onPress={() => navigation.navigate('ApplicationDetail', { id: item.id })}>
+        <View style={styles.card}>
+          <Image
+            source={{ uri: recruiter.company_logo || 'https://via.placeholder.com/48' }}
+            style={styles.logo}
+          />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.jobTitle}>{job.title}</Text>
+            <Text style={styles.company}>{recruiter.company_name}</Text>
+            <View style={styles.row}>
+              <Text style={styles.salary}>{salary ? `${salary} USD` : ''}</Text>
+              <Text style={styles.location}>{workLocation}</Text>
             </View>
-            <Text style={styles.type}>{job.job_type || 'Full-time'}</Text>
+            {/* Nếu muốn hiển thị cả địa chỉ công ty, thêm dòng sau */}
+            {/* <Text style={styles.companyAddress}>{companyAddress}</Text> */}
+            <View style={styles.row}>
+              <View style={[
+                styles.statusTag,
+                { backgroundColor: STATUS_COLORS[statusDisplay] || '#E0E7FF' }
+              ]}>
+                <Text style={{
+                  color: STATUS_TEXT_COLORS[statusDisplay] || '#6366F1',
+                  fontWeight: 'bold'
+                }}>
+                  {statusDisplay}
+                </Text>
+              </View>
+              <Text style={styles.type}>{job.job_type || 'Full-time'}</Text>
+            </View>
           </View>
         </View>
-      </View>
+      </TouchableOpacity>
     );
   };
 
