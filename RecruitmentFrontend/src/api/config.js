@@ -50,9 +50,13 @@ export const ENDPOINTS = {
 
     // Jobs
     JOBS: '/jobs/',
-    JOB_DETAIL: (id) => `/jobs/${id}/`,
+    JOB_DETAIL: (slug) => `/jobs/${slug}/`,
     RECRUITER_JOBS: (userId) => `/recruiters/${userId}/jobs/`,
     JOB_STATUS: (id) => `/jobs/${id}/status/`,
+
+    //Applications
+    MY_APPLICATIONS: '/applications/',
+    CREATE_APPLICATION: '/applications/',
 
     ADMIN: {
         // Users Management

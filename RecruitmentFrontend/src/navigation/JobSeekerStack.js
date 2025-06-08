@@ -36,6 +36,7 @@ function JobSeekerStackScreens() {
             <Stack.Screen name="UploadCV" component={UploadCVScreen} options={{title: 'Tải CV lên'}}/>
             <Stack.Screen name="ApplicationStatus" component={ApplicationStatusScreen}
                           options={{title: 'Trạng thái ứng tuyển'}}/>
+            <Stack.Screen name="ApplyScreen" component={ApplyScreen} options={{title: 'Ứng tuyển'}}/>
             <Stack.Screen name="JobSearch" component={JobSearchScreen}/>
             <Stack.Screen name="ProfileEdit" component={ProfileEditScreen} options={{title: 'Cập nhật hồ sơ'}}/>
             <Stack.Screen name="About" component={AboutScreen} options={{title: 'Về chúng tôi'}}/>

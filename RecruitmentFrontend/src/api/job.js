@@ -17,10 +17,11 @@ export const getJobs = async (params = {}) => {
 /**
  * Lấy chi tiết tin tuyển dụng
  * @param {string} slug - Slug của tin tuyển dụng
+ * @param {string} token - JWT access token
  * @returns {Promise<object>} Chi tiết tin tuyển dụng
  */
-export const getJobDetail = async (slug) => {
-  return apiRequest(ENDPOINTS.JOB_DETAIL(slug), 'GET');
+export const getJobDetail = async (slug, token) => {
+  return apiRequest(ENDPOINTS.JOB_DETAIL(slug), 'GET', token);
 };
 
 /**
