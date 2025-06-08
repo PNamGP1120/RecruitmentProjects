@@ -315,3 +315,19 @@ export const getJobStatistics = async (token, userId) => {
         throw error;
     }
 };
+
+/**
+ * Đề nghị việc làm cho ứng viên
+ * @param {string} token - JWT token
+ * @param {string} applicationId - ID của đơn ứng tuyển
+ * @returns {Promise<Object>} Kết quả đề nghị việc làm
+ */
+export const offerApplication = async (token, applicationId) => {
+    try {
+        const response = await apiRequest(ENDPOINTS.RECRUITER.APPLICATION_OFFER(applicationId), 'POST', token);
+        return response;
+    } catch (error) {
+        console.error('Error in offerApplication:', error);
+        throw error;
+    }
+};

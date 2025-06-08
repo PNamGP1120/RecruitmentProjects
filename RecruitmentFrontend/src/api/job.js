@@ -18,7 +18,7 @@ export const getJobDetail = async (slug, token = null) => {
     return apiRequest(ENDPOINTS.JOB_DETAIL(slug), 'GET', token);
   };
 
-  export const getJobDetails = async (token, slug) => {
+export const getJobDetails = async (token, slug) => {
     return getJobDetail(slug, token);
   };
 

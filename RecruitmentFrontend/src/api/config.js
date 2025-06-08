@@ -70,6 +70,7 @@ export const ENDPOINTS = {
         // Quản lý đơn ứng tuyển
         APPLICATIONS: '/applications/recruiter_applications/',
         APPLICATION_REJECT: (id) => `/applications/${id}/reject/`,
+        APPLICATION_OFFER: (id) => `/applications/${id}/offer/`,
         
         // Quản lý phỏng vấn
         INTERVIEWS: '/interviews/',

@@ -7,9 +7,9 @@ import RecruiterDrawer from '../components/RecruiterDrawer';
 // Import các màn hình
 import CandidateListScreen from '../screens/Recruiter/CandidateListScreen';
 import CandidateProfileScreen from '../screens/Recruiter/CandidateProfileScreen';
-import ChatScreen from '../screens/Recruiter/ChatScreen';
+import ChatScreen from '../screens/Common/ChatScreen';
 import CompanyProfileScreen from '../screens/Recruiter/CompanyProfileScreen';
-import ConversationsScreen from '../screens/Recruiter/ConversationsScreen';
+import ConversationsScreen from '../screens/Common/ConversationsScreen';
 import CreateJobScreen from '../screens/Recruiter/CreateJobScreen';
 import HomeScreen from '../screens/Recruiter/HomeScreen';
 import JobsScreen from '../screens/Recruiter/JobsScreen';
@@ -24,6 +24,7 @@ import HelpSupportScreen from '../screens/Recruiter/HelpSupportScreen';
 import EditProfileScreen from '../screens/Recruiter/EditProfileScreen';
 import ApplicationDetail from '../screens/Recruiter/ApplicationDetail';
 import PDFViewer from '../screens/Common/PDFViewer';
+import VideoConferenceScreen from '../screens/Common/VideoConferenceScreen';
 
 const Stack = createNativeStackNavigator();
 const Drawer = createDrawerNavigator();
@@ -60,6 +61,7 @@ const MainStack = () => (
         <Stack.Screen name="About" component={AboutScreen} options={{ headerShown: false }} />
         <Stack.Screen name="Help" component={HelpSupportScreen} options={{ headerShown: false }} />
         <Stack.Screen name="PDFViewer" component={PDFViewer} options={{ headerShown: false }} />
+        <Stack.Screen name="VideoConference" component={VideoConferenceScreen} options={{ headerShown: false }} />
 
     </Stack.Navigator>
 );

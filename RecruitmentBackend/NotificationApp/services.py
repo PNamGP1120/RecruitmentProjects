@@ -70,7 +70,7 @@ def create_notification_for_resume_activated(resume):
     )
 
 def create_notification_for_application_status_change(application, old_status, new_status):
-    user = application.job_seeker.user
+    user = application.job_seeker
     message_map = {
         'APPLIED': 'Bạn đã nộp hồ sơ thành công.',
         'WITHDRAWN': 'Bạn đã rút hồ sơ.',

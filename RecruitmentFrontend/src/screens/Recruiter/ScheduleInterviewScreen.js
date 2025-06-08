@@ -101,6 +101,9 @@ const ScheduleInterviewScreen = ({ route, navigation }) => {
       // Create interview
       const response = await createInterview(userToken, interviewData);
       
+      // Không cần gọi API cập nhật trạng thái đơn ứng tuyển ở đây
+      // Vì khi tạo interview, backend sẽ tự động cập nhật trạng thái đơn ứng tuyển
+      
       Alert.alert(
         'Thành công',
         'Đã lên lịch phỏng vấn thành công',

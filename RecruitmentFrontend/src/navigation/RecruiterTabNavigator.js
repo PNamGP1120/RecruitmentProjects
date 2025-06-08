@@ -5,7 +5,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 // Import các màn hình
 import JobsScreen from '../screens/Recruiter/JobsScreen';
 import RecruitScreen from '../screens/Recruiter/RecruitScreen';
-import ConversationsScreen from '../screens/Recruiter/ConversationsScreen';
+import ConversationsScreen from '../screens/Common/ConversationsScreen';
 import ProfileScreen from '../screens/Recruiter/ProfileScreen';
 
 const Tab = createBottomTabNavigator();
