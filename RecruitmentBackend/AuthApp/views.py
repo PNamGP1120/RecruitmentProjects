@@ -1,5 +1,6 @@
 from rest_framework import viewsets, status, mixins
 from rest_framework.decorators import action
+from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -15,6 +16,18 @@ from .serializers import (
     AvatarUploadSerializer
 )
 from .permissions import IsAdminUser
+
+
+class UserViewSet(viewsets.ModelViewSet):
+    queryset = MyUser.objects.all()
+    serializer_class = UserSerializer
+    permission_classes = [IsAdminUser]  # Chỉ admin mới có thể truy cập
+    filter_backends = (SearchFilter, OrderingFilter)
+    search_fields = ['username', 'email']  # Cho phép tìm kiếm theo username và email
+    ordering_fields = ['username', 'email', 'is_active']  # Cho phép sắp xếp theo các trường này
+    ordering = ['-date_joined']  # Sắp xếp theo thời gian tham gia giảm dần
+
+
 
 class AuthViewSet(viewsets.GenericViewSet):
     """
