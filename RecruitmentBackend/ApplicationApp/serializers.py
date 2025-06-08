@@ -2,12 +2,20 @@ from rest_framework import serializers
 from .models import Application, Interview, ApplicationStatus, InterviewStatus
 from ResumeApp.models import Resume
 from JobApp.models import JobPosting
+from JobApp.serializers import JobPostingSerializer
+from ResumeApp.serializers import ResumeSerializer
+from AuthApp.serializers import UserSerializer
 
 
 class ApplicationSerializer(serializers.ModelSerializer):
-    job_seeker = serializers.PrimaryKeyRelatedField(read_only=True)
-    job_posting = serializers.PrimaryKeyRelatedField(queryset=JobPosting.objects.all())
-    resume = serializers.PrimaryKeyRelatedField(queryset=Resume.objects.all(), required=False, allow_null=True)
+    # Thay thế PrimaryKeyRelatedField bằng các Serializer đầy đủ
+    job_seeker = UserSerializer(read_only=True)
+    job_posting_detail = JobPostingSerializer(source='job_posting', read_only=True)
+    resume_detail = ResumeSerializer(source='resume', read_only=True)
+    
+    # Giữ lại các trường ID cho việc tạo/cập nhật
+    job_posting = serializers.PrimaryKeyRelatedField(queryset=JobPosting.objects.all(), write_only=True)
+    resume = serializers.PrimaryKeyRelatedField(queryset=Resume.objects.all(), required=False, allow_null=True, write_only=True)
 
     job_posting_title = serializers.CharField(source='job_posting.title', read_only=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
@@ -18,8 +26,10 @@ class ApplicationSerializer(serializers.ModelSerializer):
             'id',
             'job_seeker',
             'job_posting',
+            'job_posting_detail',
             'job_posting_title',
             'resume',
+            'resume_detail',
             'status',
             'status_display',
             'applied_at',

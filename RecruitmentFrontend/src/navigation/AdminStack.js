@@ -7,7 +7,6 @@ import AdminDrawer from './AdminDrawer';
 // Import các screens
 import UserDetail from '../screens/Admin/UserManagement/UserDetail';
 import JobDetail from '../screens/Admin/JobManagement/JobDetail';
-import AddEditSkill from '../screens/Admin/SkillManagement/AddEditSkill';
 import UserStats from '../screens/Admin/Reports/UserStats';
 import ActivityLogs from '../screens/Admin/Reports/ActivityLogs';
 import Overview from '../screens/Admin/Reports/Overview';
@@ -133,14 +132,6 @@ const AdminStack = () => {
         }}
       />
 
-      {/* Skill Management */}
-      <Stack.Screen
-        name="AddEditSkill"
-        component={AddEditSkill}
-        options={({ route }) => ({
-          title: route.params?.skillId ? 'Chỉnh sửa kỹ năng' : 'Thêm kỹ năng',
-        })}
-      />
 
       {/* Reports */}
       <Stack.Screen

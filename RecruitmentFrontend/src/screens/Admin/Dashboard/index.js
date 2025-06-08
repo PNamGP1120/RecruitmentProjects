@@ -24,7 +24,7 @@ import { useNavigation, DrawerActions } from '@react-navigation/native';
 const { width, height } = Dimensions.get('window');
 const STATUSBAR_HEIGHT = StatusBar.currentHeight || 0;
 
-// Custom Power Stat Card - Thể hiện quyền lực
+// Thẻ thống kê chính
 const PowerStatCard = ({ title, value, icon, gradientColors, iconBackgroundColor }) => (
   <Surface style={styles.powerStatCard}>
     <View style={styles.powerStatContent}>
@@ -39,7 +39,7 @@ const PowerStatCard = ({ title, value, icon, gradientColors, iconBackgroundColor
   </Surface>
 );
 
-// Graph Card Component
+// Thẻ biểu đồ
 const GraphCard = ({ title, icon, children }) => (
   <Surface style={styles.graphCard}>
     <View style={styles.graphCardHeader}>
@@ -58,7 +58,7 @@ const GraphCard = ({ title, icon, children }) => (
   </Surface>
 );
 
-// Progress Bar Component
+// Thanh tiến trình
 const ProgressBar = ({ value, maxValue, color, label, count }) => {
   const percentage = (value / maxValue) * 100;
   return (
@@ -79,7 +79,7 @@ const ProgressBar = ({ value, maxValue, color, label, count }) => {
   );
 };
 
-// Main Dashboard Component
+// Màn hình Tổng quan
 const Dashboard = () => {
   const navigation = useNavigation();
   const { userToken, userInfo } = useAuth();
@@ -108,7 +108,7 @@ const Dashboard = () => {
       setTrendsData(trendsResponse);
       setNotificationsData(notificationsResponse);
     } catch (error) {
-      console.error('Error fetching dashboard data:', error);
+      console.error('Lỗi khi tải dữ liệu tổng quan:', error);
     } finally {
       setLoading(false);
     }
@@ -124,7 +124,7 @@ const Dashboard = () => {
     fetchData();
   }, []);
 
-  // Tính tổng số user từ user_counts
+  // Tính tổng số người dùng từ user_counts
   const getTotalUsers = () => {
     if (!summaryData || !summaryData.user_counts) return 0;
     return summaryData.user_counts.reduce((total, item) => total + item.count, 0);
@@ -143,12 +143,12 @@ const Dashboard = () => {
     return ((notificationsData.read_notifications / notificationsData.total_notifications) * 100).toFixed(1);
   };
 
-  // Generate and share PDF report
-  const generateAndSharePDF = async () => {
+  // Tạo và tải xuống báo cáo PDF
+  const downloadPDFReport = async () => {
     try {
       setIsGenerating(true);
       
-      // Create HTML content
+      // Tạo nội dung HTML
       const htmlContent = `
         <html>
           <head>
@@ -168,38 +168,38 @@ const Dashboard = () => {
             </style>
           </head>
           <body>
-            <h1>Admin Dashboard Report</h1>
-            <p>Generated on: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}</p>
+            <h1>Báo Cáo Tổng Quan Quản Trị</h1>
+            <p>Ngày tạo: ${new Date().toLocaleDateString('vi-VN')} ${new Date().toLocaleTimeString('vi-VN')}</p>
             
-            <h2>System Overview</h2>
+            <h2>Tổng Quan Hệ Thống</h2>
             <div class="stats-container">
               <div class="stat-item">
                 <div class="stat-value">${getTotalUsers()}</div>
-                <div class="stat-label">Total Users</div>
+                <div class="stat-label">Tổng Người Dùng</div>
               </div>
               <div class="stat-item">
                 <div class="stat-value">${summaryData?.total_jobs || 0}</div>
-                <div class="stat-label">Total Jobs</div>
+                <div class="stat-label">Tổng Việc Làm</div>
               </div>
               <div class="stat-item">
                 <div class="stat-value">${summaryData?.total_applications || 0}</div>
-                <div class="stat-label">Total Applications</div>
+                <div class="stat-label">Tổng Đơn Ứng Tuyển</div>
               </div>
               <div class="stat-item">
                 <div class="stat-value">${getUserCountByRole("Recruiter")}</div>
-                <div class="stat-label">Active Recruiters</div>
+                <div class="stat-label">Nhà Tuyển Dụng</div>
               </div>
             </div>
             
-            <h2>User Role Distribution</h2>
+            <h2>Phân Bố Vai Trò Người Dùng</h2>
             <table>
               <tr>
-                <th>Role</th>
-                <th>Count</th>
-                <th>Percentage</th>
+                <th>Vai Trò</th>
+                <th>Số Lượng</th>
+                <th>Tỷ Lệ</th>
               </tr>
               ${summaryData?.user_counts?.map(role => {
-                const roleName = role.active_role__name || 'Unverified';
+                const roleName = role.active_role__name || 'Chưa xác thực';
                 const percentage = ((role.count / getTotalUsers()) * 100).toFixed(1);
                 return `
                   <tr>
@@ -211,35 +211,35 @@ const Dashboard = () => {
               }).join('')}
             </table>
             
-            <h2>Notification Statistics</h2>
+            <h2>Thống Kê Thông Báo</h2>
             <table>
               <tr>
-                <th>Type</th>
-                <th>Count</th>
+                <th>Loại</th>
+                <th>Số Lượng</th>
               </tr>
               <tr>
-                <td>Total Notifications</td>
+                <td>Tổng Thông Báo</td>
                 <td>${notificationsData?.total_notifications || 0}</td>
               </tr>
               <tr>
-                <td>Read Notifications</td>
+                <td>Đã Đọc</td>
                 <td>${notificationsData?.read_notifications || 0}</td>
               </tr>
               <tr>
-                <td>Unread Notifications</td>
+                <td>Chưa Đọc</td>
                 <td>${notificationsData?.unread_notifications || 0}</td>
               </tr>
             </table>
             
-            <h2>Notification Types</h2>
+            <h2>Loại Thông Báo</h2>
             <table>
               <tr>
-                <th>Type</th>
-                <th>Count</th>
-                <th>Percentage</th>
+                <th>Loại</th>
+                <th>Số Lượng</th>
+                <th>Tỷ Lệ</th>
               </tr>
               ${notificationsData?.counts_by_type?.map(type => {
-                const typeName = type.notification_type === 'general' ? 'General' : 'Job Related';
+                const typeName = type.notification_type === 'general' ? 'Thông Báo Chung' : 'Thông Báo Việc Làm';
                 const percentage = ((type.count / notificationsData.total_notifications) * 100).toFixed(1);
                 return `
                   <tr>
@@ -252,39 +252,38 @@ const Dashboard = () => {
             </table>
             
             <div class="footer">
-              <p>© ${new Date().getFullYear()} Recruitment System Admin Dashboard</p>
+              <p>© ${new Date().getFullYear()} Hệ Thống Quản Trị Tuyển Dụng</p>
             </div>
           </body>
         </html>
       `;
       
       try {
-        // Create PDF file
+        // Tạo file PDF
         const { uri } = await Print.printToFileAsync({ html: htmlContent });
         
-        // Create filename with timestamp
+        // Tạo tên file với timestamp
         const timestamp = new Date().getTime();
-        const newFileUri = FileSystem.documentDirectory + `admin_report_${timestamp}.pdf`;
+        const newFileUri = FileSystem.documentDirectory + `bao_cao_quan_tri_${timestamp}.pdf`;
         
-        // Move file to document directory
+        // Di chuyển file vào thư mục tài liệu
         await FileSystem.moveAsync({
           from: uri,
           to: newFileUri
         });
         
-        // Share file using native Share API instead of expo-sharing
-        await Share.share({
-          url: newFileUri,
-          title: 'Admin Dashboard Report',
-          message: 'Here is your Admin Dashboard Report',
+        // Chia sẻ file
+        await Sharing.shareAsync(newFileUri, {
+          mimeType: 'application/pdf',
+          dialogTitle: 'Chia sẻ báo cáo quản trị',
         });
       } catch (error) {
-        console.error('Error sharing PDF:', error);
-        alert('There was an error generating or sharing the report. Please try again.');
+        console.error('Lỗi khi chia sẻ PDF:', error);
+        alert('Đã xảy ra lỗi khi tạo hoặc chia sẻ báo cáo. Vui lòng thử lại.');
       }
     } catch (error) {
-      console.error('Error generating report:', error);
-      alert('There was an error generating the report. Please try again.');
+      console.error('Lỗi khi tạo báo cáo:', error);
+      alert('Đã xảy ra lỗi khi tạo báo cáo. Vui lòng thử lại.');
     } finally {
       setIsGenerating(false);
     }
@@ -302,7 +301,7 @@ const Dashboard = () => {
     <SafeAreaView style={styles.container}>
       <StatusBar backgroundColor="#F1F5F9" barStyle="dark-content" />
       
-      {/* Custom Header with Drawer Button */}
+      {/* Thanh tiêu đề với nút Drawer */}
       <View style={styles.customHeader}>
         <TouchableOpacity 
           style={styles.drawerButton}
@@ -311,7 +310,7 @@ const Dashboard = () => {
           <MaterialCommunityIcons name="menu" size={24} color="#1E3A8A" />
         </TouchableOpacity>
         
-        <Text style={styles.headerTitle}>Admin Dashboard</Text>
+        <Text style={styles.headerTitle}>Tổng Quan Quản Trị</Text>
         
         <TouchableOpacity style={styles.headerRightButton}>
           <MaterialCommunityIcons name="bell-outline" size={24} color="#1E3A8A" />
@@ -328,8 +327,8 @@ const Dashboard = () => {
         <View style={styles.dashboardHeader}>
           <View style={styles.userInfoSection}>
             <View>
-              <Text style={styles.welcomeText}>Welcome back,</Text>
-              <Text style={styles.usernameText}>{userInfo?.username || 'Admin'}</Text>
+              <Text style={styles.welcomeText}>Xin chào,</Text>
+              <Text style={styles.usernameText}>{userInfo?.username || 'Quản trị viên'}</Text>
             </View>
             {userInfo?.avatar_url ? (
               <Avatar.Image 
@@ -339,7 +338,7 @@ const Dashboard = () => {
               />
             ) : (
               <Avatar.Text 
-                label={(userInfo?.username?.substring(0, 2) || 'A').toUpperCase()} 
+                label={(userInfo?.username?.substring(0, 2) || 'Q').toUpperCase()} 
                 size={50}
                 style={styles.avatar}
                 color="#fff"
@@ -351,32 +350,32 @@ const Dashboard = () => {
           <View style={styles.statsOverview}>
             <View style={styles.statOverviewItem}>
               <Text style={styles.statOverviewValue}>{getTotalUsers()}</Text>
-              <Text style={styles.statOverviewLabel}>Users</Text>
+              <Text style={styles.statOverviewLabel}>Người dùng</Text>
             </View>
             <View style={styles.statOverviewDivider} />
             <View style={styles.statOverviewItem}>
               <Text style={styles.statOverviewValue}>{summaryData?.total_jobs || 0}</Text>
-              <Text style={styles.statOverviewLabel}>Jobs</Text>
+              <Text style={styles.statOverviewLabel}>Việc làm</Text>
             </View>
             <View style={styles.statOverviewDivider} />
             <View style={styles.statOverviewItem}>
               <Text style={styles.statOverviewValue}>{notificationsData?.unread_notifications || 0}</Text>
-              <Text style={styles.statOverviewLabel}>Alerts</Text>
+              <Text style={styles.statOverviewLabel}>Thông báo</Text>
             </View>
           </View>
         </View>
         
-        {/* Power Stats Grid */}
+        {/* Lưới thống kê chính */}
         <View style={styles.powerStatsContainer}>
           <PowerStatCard 
-            title="Pending Approvals"
+            title="Chờ phê duyệt"
             value={getUserCountByRole(null) || 0}
             icon="account-clock"
             gradientColors={['#2563EB', '#1E40AF']}
             iconBackgroundColor="rgba(37, 99, 235, 0.8)"
           />
           <PowerStatCard 
-            title="System Notifications"
+            title="Thông báo hệ thống"
             value={notificationsData?.total_notifications || 0}
             icon="bell-ring"
             gradientColors={['#F59E0B', '#D97706']}
@@ -386,14 +385,14 @@ const Dashboard = () => {
         
         <View style={styles.powerStatsContainer}>
           <PowerStatCard 
-            title="Job Applications"
+            title="Đơn ứng tuyển"
             value={summaryData?.total_applications || 0}
             icon="file-document-multiple"
             gradientColors={['#10B981', '#059669']}
             iconBackgroundColor="rgba(16, 185, 129, 0.8)"
           />
           <PowerStatCard 
-            title="Active Recruiters"
+            title="Nhà tuyển dụng"
             value={getUserCountByRole("Recruiter")}
             icon="domain"
             gradientColors={['#EC4899', '#DB2777']}
@@ -401,11 +400,11 @@ const Dashboard = () => {
           />
         </View>
         
-        {/* User Distribution Graph */}
-        <GraphCard title="User Role Distribution" icon="chart-pie">
+        {/* Biểu đồ phân bố người dùng */}
+        <GraphCard title="Phân bố vai trò người dùng" icon="chart-pie">
           <View style={styles.chartContainer}>
             {summaryData?.user_counts?.map((role, index) => {
-              const roleName = role.active_role__name || 'Unverified';
+              const roleName = role.active_role__name || 'Chưa xác thực';
               return (
                 <ProgressBar 
                   key={index}
@@ -420,8 +419,8 @@ const Dashboard = () => {
           </View>
         </GraphCard>
         
-        {/* Monthly Trends Graph */}
-        <GraphCard title="Monthly Job Postings" icon="trending-up">
+        {/* Biểu đồ xu hướng hàng tháng */}
+        <GraphCard title="Việc làm đăng hàng tháng" icon="trending-up">
           <View style={styles.trendsContainer}>
             {trendsData?.map((trend, index) => {
               const month = new Date(trend.month).toLocaleDateString('vi-VN', {
@@ -452,8 +451,8 @@ const Dashboard = () => {
           </View>
         </GraphCard>
         
-        {/* Notification Statistics */}
-        <GraphCard title="Notification Analytics" icon="bell-outline">
+        {/* Thống kê thông báo */}
+        <GraphCard title="Phân tích thông báo" icon="bell-outline">
           <View style={styles.notificationStatRow}>
             <View style={styles.notificationStat}>
               <View style={[styles.notificationStatIcon, { backgroundColor: 'rgba(37, 99, 235, 0.9)' }]}>
@@ -461,7 +460,7 @@ const Dashboard = () => {
               </View>
               <View>
                 <Text style={styles.notificationStatValue}>{notificationsData?.total_notifications || 0}</Text>
-                <Text style={styles.notificationStatLabel}>Total</Text>
+                <Text style={styles.notificationStatLabel}>Tổng</Text>
               </View>
             </View>
             
@@ -471,7 +470,7 @@ const Dashboard = () => {
               </View>
               <View>
                 <Text style={styles.notificationStatValue}>{notificationsData?.unread_notifications || 0}</Text>
-                <Text style={styles.notificationStatLabel}>Unread</Text>
+                <Text style={styles.notificationStatLabel}>Chưa đọc</Text>
               </View>
             </View>
             
@@ -481,17 +480,17 @@ const Dashboard = () => {
               </View>
               <View>
                 <Text style={styles.notificationStatValue}>{notificationsData?.read_notifications || 0}</Text>
-                <Text style={styles.notificationStatLabel}>Read</Text>
+                <Text style={styles.notificationStatLabel}>Đã đọc</Text>
               </View>
             </View>
           </View>
           
           <Divider style={styles.divider} />
           
-          <Text style={styles.sectionTitle}>Notification Types</Text>
+          <Text style={styles.sectionTitle}>Loại thông báo</Text>
           <View style={styles.notificationTypeContainer}>
             {notificationsData?.counts_by_type?.map((type, index) => {
-              const typeName = type.notification_type === 'general' ? 'General' : 'Job Related';
+              const typeName = type.notification_type === 'general' ? 'Thông báo chung' : 'Thông báo việc làm';
               const typeIcon = type.notification_type === 'general' ? 'bell-ring' : 'briefcase';
               const typeColor = type.notification_type === 'general' ? 'rgba(245, 158, 11, 0.9)' : 'rgba(37, 99, 235, 0.9)';
               const percentage = (type.count / notificationsData.total_notifications) * 100;
@@ -521,11 +520,11 @@ const Dashboard = () => {
           </View>
         </GraphCard>
         
-        {/* Action Buttons */}
+        {/* Nút tải báo cáo PDF */}
         <View style={styles.actionButtonsContainer}>
           <TouchableOpacity 
             style={[styles.actionButton, styles.primaryActionButton]}
-            onPress={generateAndSharePDF}
+            onPress={downloadPDFReport}
             disabled={isGenerating}
           >
             <LinearGradient
@@ -540,18 +539,9 @@ const Dashboard = () => {
                 <MaterialCommunityIcons name="file-pdf-box" size={20} color="#fff" style={styles.buttonIcon} />
               )}
               <Text style={styles.actionButtonText}>
-                {isGenerating ? 'Generating...' : 'Download PDF Report'}
+                {isGenerating ? 'Đang tạo...' : 'Tải báo cáo PDF'}
               </Text>
             </LinearGradient>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={[styles.actionButton, styles.secondaryActionButton]}
-          >
-            <View style={styles.secondaryActionButtonContent}>
-              <MaterialCommunityIcons name="chart-bar" size={20} color="#1E3A8A" style={styles.buttonIcon} />
-              <Text style={styles.secondaryActionButtonText}>Custom Report</Text>
-            </View>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -563,13 +553,13 @@ const Dashboard = () => {
 const getRoleColor = (roleName) => {
   switch (roleName) {
     case 'Admin':
-      return 'rgba(220, 38, 38, 0.9)'; // Red
+      return 'rgba(220, 38, 38, 0.9)'; // Đỏ
     case 'Recruiter':
-      return 'rgba(16, 185, 129, 0.9)'; // Green
+      return 'rgba(16, 185, 129, 0.9)'; // Xanh lá
     case 'JobSeeker':
-      return 'rgba(37, 99, 235, 0.9)'; // Blue
+      return 'rgba(37, 99, 235, 0.9)'; // Xanh dương
     default:
-      return 'rgba(156, 163, 175, 0.9)'; // Gray
+      return 'rgba(156, 163, 175, 0.9)'; // Xám
   }
 };
 
@@ -885,18 +875,7 @@ const styles = StyleSheet.create({
   primaryActionButton: {
     elevation: 2,
   },
-  secondaryActionButton: {
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#2563EB',
-  },
   actionButtonGradient: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 14,
-  },
-  secondaryActionButtonContent: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -908,11 +887,7 @@ const styles = StyleSheet.create({
   actionButtonText: {
     color: '#fff',
     fontWeight: 'bold',
-  },
-  secondaryActionButtonText: {
-    color: '#1E3A8A',
-    fontWeight: 'bold',
-  },
+  }
 });
 
 export default Dashboard;

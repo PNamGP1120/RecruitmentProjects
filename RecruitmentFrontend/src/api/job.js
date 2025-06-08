@@ -14,14 +14,13 @@ export const getJobs = async (params = {}) => {
   return apiRequest(ENDPOINTS.JOBS, 'GET', null, null, params);
 };
 
-/**
- * Lấy chi tiết tin tuyển dụng
- * @param {string} slug - Slug của tin tuyển dụng
- * @returns {Promise<object>} Chi tiết tin tuyển dụng
- */
-export const getJobDetail = async (slug) => {
-  return apiRequest(ENDPOINTS.JOB_DETAIL(slug), 'GET');
-};
+export const getJobDetail = async (slug, token = null) => {
+    return apiRequest(ENDPOINTS.JOB_DETAIL(slug), 'GET', token);
+  };
+
+  export const getJobDetails = async (token, slug) => {
+    return getJobDetail(slug, token);
+  };
 
 /**
  * Lấy danh sách tin tuyển dụng nổi bật

@@ -8,7 +8,6 @@ import Dashboard from '../screens/Admin/Dashboard';
 import UserList from '../screens/Admin/UserManagement/UserList';
 import JobList from '../screens/Admin/JobManagement/JobList';
 import SkillList from '../screens/Admin/SkillManagement/SkillList';
-import Overview from '../screens/Admin/Reports/Overview';
 
 const Tab = createBottomTabNavigator();
 
@@ -65,16 +64,7 @@ const AdminTabNavigator = () => {
           title: 'Kỹ năng',
         }}
       />
-      <Tab.Screen
-        name="Reports"
-        component={Overview}
-        options={{
-          tabBarIcon: ({ color, size }) => (
-            <MaterialIcons name="analytics" size={size} color={color} />
-          ),
-          title: 'Báo cáo',
-        }}
-      />
+
     </Tab.Navigator>
   );
 };

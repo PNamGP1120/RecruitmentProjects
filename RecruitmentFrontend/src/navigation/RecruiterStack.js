@@ -22,6 +22,8 @@ import EditJobScreen from '../screens/Recruiter/EditJobScreen';
 import AboutScreen from '../screens/Recruiter/AboutScreen';
 import HelpSupportScreen from '../screens/Recruiter/HelpSupportScreen';
 import EditProfileScreen from '../screens/Recruiter/EditProfileScreen';
+import ApplicationDetail from '../screens/Recruiter/ApplicationDetail';
+import PDFViewer from '../screens/Common/PDFViewer';
 
 const Stack = createNativeStackNavigator();
 const Drawer = createDrawerNavigator();
@@ -40,7 +42,8 @@ const MainStack = () => (
         <Stack.Screen name="CandidateList" component={CandidateListScreen} options={{ title: 'Danh sách ứng viên' }} />
         <Stack.Screen name="CandidateProfile" component={CandidateProfileScreen} options={{ title: 'Hồ sơ ứng viên' }} />
         <Stack.Screen name="Recruit" component={RecruitScreen} options={{ title: 'Tuyển dụng' }} />
-        <Stack.Screen name="ScheduleInterview" component={ScheduleInterviewScreen} options={{ title: 'Lịch phỏng vấn' }} />
+        <Stack.Screen name="ScheduleInterview" component={ScheduleInterviewScreen} options={{ title: 'Lịch phỏng vấn', headerShown: false }} />
+        <Stack.Screen name="ApplicationDetail" component={ApplicationDetail} options={{ title: 'Chi tiết ứng viên', headerShown: false }} />
 
         {/* Chat */}
         <Stack.Screen name="Chat" component={ChatScreen} options={{ title: 'Chat' }} />
@@ -56,6 +59,8 @@ const MainStack = () => (
         {/* Khác */}
         <Stack.Screen name="About" component={AboutScreen} options={{ headerShown: false }} />
         <Stack.Screen name="Help" component={HelpSupportScreen} options={{ headerShown: false }} />
+        <Stack.Screen name="PDFViewer" component={PDFViewer} options={{ headerShown: false }} />
+
     </Stack.Navigator>
 );
 
