@@ -55,18 +55,54 @@ export default function JobSeekerHome({ navigation }) {
 
   // Render Featured Job
   const renderFeaturedJob = ({ item }) => (
-    <JobCard
-      job={item}
+    <TouchableOpacity
+      key={item.id}
+      style={styles.featuredJobCard}
       onPress={() => navigation.navigate('JobDetail', { slug: item.slug })}
-    />
+    >
+      <Image
+        source={{ 
+          uri: item.recruiter_profile?.company_logo || 'https://via.placeholder.com/150'
+        }}
+        style={styles.companyLogo}
+      />
+      <View style={styles.jobInfo}>
+        <Text style={styles.jobTitle}>{item.title}</Text>
+        <Text style={styles.companyName}>
+          {item.recruiter_profile?.company_name || 'Công ty'}
+        </Text>
+        <Text style={styles.location}>{item.location}</Text>
+        <Text style={styles.salary}>
+          {formatSalary(item.salary_min, item.salary_max)}
+        </Text>
+      </View>
+    </TouchableOpacity>
   );
 
   // Render Popular Job
   const renderPopularJob = ({ item }) => (
-    <JobCard
-      job={item}
+    <TouchableOpacity
+      key={item.id}
+      style={styles.popularJobCard}
       onPress={() => navigation.navigate('JobDetail', { slug: item.slug })}
-    />
+    >
+      <Image
+        source={{ 
+          uri: item.recruiter_profile?.company_logo || 'https://via.placeholder.com/150'
+        }}
+        style={styles.popularCompanyLogo}
+      />
+      <View style={styles.jobInfo}>
+        <Text style={styles.jobTitle}>{item.title}</Text>
+        <Text style={styles.companyName}>
+          {item.recruiter_profile?.company_name || 'Công ty'}
+        </Text>
+        <Text style={styles.location}>{item.location}</Text>
+        <Text style={styles.salary}>
+          {formatSalary(item.salary_min, item.salary_max)}
+        </Text>
+      </View>
+    </TouchableOpacity>
   );
 
   if (isLoading) {
@@ -224,5 +260,54 @@ const styles = StyleSheet.create({
     color: '#007bff',
     fontSize: 14,
     fontWeight: '600',
+  },
+  featuredJobCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#e9ecef',
+    borderRadius: 10,
+  },
+  companyLogo: {
+    width: 80,
+    height: 80,
+    borderRadius: 10,
+    marginRight: 10,
+  },
+  jobInfo: {
+    flex: 1,
+  },
+  jobTitle: {
+    fontWeight: '700',
+    fontSize: 18,
+    color: '#212529',
+  },
+  companyName: {
+    fontSize: 16,
+    color: '#6c757d',
+  },
+  location: {
+    fontSize: 14,
+    color: '#6c757d',
+  },
+  salary: {
+    fontWeight: '600',
+    fontSize: 16,
+    color: '#28a745',
+  },
+  popularJobCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#e9ecef',
+    borderRadius: 10,
+  },
+  popularCompanyLogo: {
+    width: 80,
+    height: 80,
+    borderRadius: 10,
+    marginRight: 10,
   },
 });

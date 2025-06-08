@@ -30,7 +30,7 @@ export const getJobDetail = async (slug) => {
 export const getFeaturedJobs = async () => {
   return getJobs({
     ordering: '-views_count,-created_at',
-    limit: 10
+    limit: 5
   });
 };
 

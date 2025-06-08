@@ -72,7 +72,12 @@ export default function JobDetailScreen({ route, navigation }) {
   return (
     <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 30 }}>
       <View style={styles.header}>
-        <Image source={{ uri: job.recruiter_profile?.company_logo_url }} style={styles.logo} />
+        <Image 
+          source={{ 
+            uri: job.recruiter_profile?.company_logo || 'https://via.placeholder.com/150'
+          }} 
+          style={styles.logo} 
+        />
         <View style={styles.headerInfo}>
           <Text style={styles.title}>{job.title}</Text>
           <Text style={styles.company}>{job.recruiter_profile?.company_name}</Text>
