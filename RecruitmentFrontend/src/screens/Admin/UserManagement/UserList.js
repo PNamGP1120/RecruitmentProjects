@@ -1,5 +1,5 @@
 // src/screens/Admin/UserManagement/UserList.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   View, 
   ScrollView, 
@@ -22,22 +22,22 @@ import {
   Searchbar,
   Chip,
   Button,
-  Menu,
   IconButton,
   Badge,
   Modal,
-  Portal
+  Portal,
+  Tooltip
 } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as adminAPI from '../../../api/admin';
 import { useAuth } from '../../../contexts/AuthContext';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useNavigation, DrawerActions } from '@react-navigation/native';
+import { useNavigation, DrawerActions, useFocusEffect } from '@react-navigation/native';
 
 const { width, height } = Dimensions.get('window');
 const STATUSBAR_HEIGHT = StatusBar.currentHeight || 0;
 
-// Thẻ hiển thị vai trò người dùng
+// Thẻ hiển thị vai trò người dùng với icons được cải thiện
 const RoleChip = ({ role, isActive }) => {
   const getRoleColor = (roleName) => {
     switch (roleName) {
@@ -52,16 +52,17 @@ const RoleChip = ({ role, isActive }) => {
     }
   };
 
+  // Cải thiện icons của các vai trò
   const getRoleIcon = (roleName) => {
     switch (roleName) {
       case 'Admin':
-        return 'shield-crown';
+        return 'shield-account';
       case 'Recruiter':
-        return 'briefcase';
+        return 'account-tie';
       case 'JobSeeker':
-        return 'account';
+        return 'account-search';
       default:
-        return 'help-circle';
+        return 'account-question';
     }
   };
 
@@ -84,29 +85,41 @@ const RoleChip = ({ role, isActive }) => {
   );
 };
 
-// Filter Modal Component
+// Filter Modal Component - Sửa lỗi bộ lọc
 const FilterModal = ({ visible, hideModal, filters, setFilters, applyFilters }) => {
-  const [tempFilters, setTempFilters] = useState(filters);
+  // Sử dụng useRef để lưu trữ trạng thái tạm thời của bộ lọc
+  const [tempFilters, setTempFilters] = useState({...filters});
+
+  // Reset tempFilters khi modal được mở
+  useEffect(() => {
+    if (visible) {
+      setTempFilters({...filters});
+    }
+  }, [visible, filters]);
 
   const handleRoleSelect = (role) => {
-    if (tempFilters.roles.includes(role)) {
-      setTempFilters({
-        ...tempFilters,
-        roles: tempFilters.roles.filter(r => r !== role)
-      });
-    } else {
-      setTempFilters({
-        ...tempFilters,
-        roles: [...tempFilters.roles, role]
-      });
-    }
+    const newRoles = tempFilters.roles.includes(role)
+      ? tempFilters.roles.filter(r => r !== role)
+      : [...tempFilters.roles, role];
+      
+    setTempFilters(prev => ({
+      ...prev,
+      roles: newRoles
+    }));
   };
 
   const handleStatusSelect = (status) => {
-    setTempFilters({
-      ...tempFilters,
+    setTempFilters(prev => ({
+      ...prev,
       status
-    });
+    }));
+  };
+
+  const handleSortSelect = (sortBy) => {
+    setTempFilters(prev => ({
+      ...prev,
+      sortBy
+    }));
   };
 
   const handleApply = () => {
@@ -139,20 +152,31 @@ const FilterModal = ({ visible, hideModal, filters, setFilters, applyFilters }) 
         <ScrollView style={styles.modalContent}>
           <Text style={styles.filterSectionTitle}>Vai trò</Text>
           <View style={styles.filterChipGroup}>
-            {['Admin', 'Recruiter', 'JobSeeker'].map(role => (
+            {[
+              { value: 'Admin', icon: 'shield-account' },
+              { value: 'Recruiter', icon: 'account-tie' },
+              { value: 'JobSeeker', icon: 'account-search' }
+            ].map(role => (
               <TouchableOpacity 
-                key={role}
-                onPress={() => handleRoleSelect(role)}
+                key={role.value}
+                onPress={() => handleRoleSelect(role.value)}
               >
                 <Chip 
-                  selected={tempFilters.roles.includes(role)}
+                  selected={tempFilters.roles.includes(role.value)}
                   selectedColor="#1976D2"
                   style={[
                     styles.filterChip,
-                    tempFilters.roles.includes(role) && styles.selectedFilterChip
+                    tempFilters.roles.includes(role.value) && styles.selectedFilterChip
                   ]}
+                  icon={() => (
+                    <MaterialCommunityIcons 
+                      name={role.icon} 
+                      size={18} 
+                      color={tempFilters.roles.includes(role.value) ? "#1976D2" : "#666"} 
+                    />
+                  )}
                 >
-                  {role}
+                  {role.value}
                 </Chip>
               </TouchableOpacity>
             ))}
@@ -161,9 +185,9 @@ const FilterModal = ({ visible, hideModal, filters, setFilters, applyFilters }) 
           <Text style={styles.filterSectionTitle}>Trạng thái</Text>
           <View style={styles.filterChipGroup}>
             {[
-              { value: 'all', label: 'Tất cả' },
-              { value: 'active', label: 'Đang hoạt động' },
-              { value: 'inactive', label: 'Đã khóa' }
+              { value: 'all', label: 'Tất cả', icon: 'account-group' },
+              { value: 'active', label: 'Đang hoạt động', icon: 'account-check' },
+              { value: 'inactive', label: 'Đã khóa', icon: 'account-lock' }
             ].map(item => (
               <TouchableOpacity 
                 key={item.value}
@@ -176,6 +200,13 @@ const FilterModal = ({ visible, hideModal, filters, setFilters, applyFilters }) 
                     styles.filterChip,
                     tempFilters.status === item.value && styles.selectedFilterChip
                   ]}
+                  icon={() => (
+                    <MaterialCommunityIcons 
+                      name={item.icon} 
+                      size={18} 
+                      color={tempFilters.status === item.value ? "#1976D2" : "#666"} 
+                    />
+                  )}
                 >
                   {item.label}
                 </Chip>
@@ -186,14 +217,14 @@ const FilterModal = ({ visible, hideModal, filters, setFilters, applyFilters }) 
           <Text style={styles.filterSectionTitle}>Sắp xếp theo</Text>
           <View style={styles.filterChipGroup}>
             {[
-              { value: 'newest', label: 'Mới nhất' },
-              { value: 'oldest', label: 'Cũ nhất' },
-              { value: 'name_asc', label: 'Tên (A-Z)' },
-              { value: 'name_desc', label: 'Tên (Z-A)' }
+              { value: 'newest', label: 'Mới nhất', icon: 'sort-calendar-descending' },
+              { value: 'oldest', label: 'Cũ nhất', icon: 'sort-calendar-ascending' },
+              { value: 'name_asc', label: 'Tên (A-Z)', icon: 'sort-alphabetical-ascending' },
+              { value: 'name_desc', label: 'Tên (Z-A)', icon: 'sort-alphabetical-descending' }
             ].map(item => (
               <TouchableOpacity 
                 key={item.value}
-                onPress={() => setTempFilters({...tempFilters, sortBy: item.value})}
+                onPress={() => handleSortSelect(item.value)}
               >
                 <Chip 
                   selected={tempFilters.sortBy === item.value}
@@ -202,6 +233,13 @@ const FilterModal = ({ visible, hideModal, filters, setFilters, applyFilters }) 
                     styles.filterChip,
                     tempFilters.sortBy === item.value && styles.selectedFilterChip
                   ]}
+                  icon={() => (
+                    <MaterialCommunityIcons 
+                      name={item.icon} 
+                      size={18} 
+                      color={tempFilters.sortBy === item.value ? "#1976D2" : "#666"} 
+                    />
+                  )}
                 >
                   {item.label}
                 </Chip>
@@ -216,6 +254,7 @@ const FilterModal = ({ visible, hideModal, filters, setFilters, applyFilters }) 
             mode="outlined" 
             onPress={handleReset}
             style={styles.resetButton}
+            icon="refresh"
           >
             Đặt lại
           </Button>
@@ -223,6 +262,7 @@ const FilterModal = ({ visible, hideModal, filters, setFilters, applyFilters }) 
             mode="contained" 
             onPress={handleApply}
             style={styles.applyButton}
+            icon="check"
           >
             Áp dụng
           </Button>
@@ -235,9 +275,12 @@ const FilterModal = ({ visible, hideModal, filters, setFilters, applyFilters }) 
 // Main UserList Component
 const UserList = () => {
   const navigation = useNavigation();
-  const { userToken, userInfo } = useAuth();
+  const { userToken } = useAuth();
+  
+  // State
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState({
@@ -249,12 +292,16 @@ const UserList = () => {
   const [totalUsers, setTotalUsers] = useState(0);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+  const [pendingRolesCount, setPendingRolesCount] = useState(0);
+  const [searchFocused, setSearchFocused] = useState(false);
 
+  // Fetch users with improved error handling
   const fetchUsers = async (newPage = 1, newFilters = filters) => {
     try {
       if (newPage === 1) {
         setLoading(true);
       }
+      setError(null);
       
       const params = {
         search: searchQuery,
@@ -263,7 +310,7 @@ const UserList = () => {
       };
       
       // Add role filter
-      if (newFilters.roles.length > 0) {
+      if (newFilters.roles && newFilters.roles.length > 0) {
         params.role = newFilters.roles.join(',');
       }
       
@@ -288,60 +335,90 @@ const UserList = () => {
           break;
       }
       
+      console.log('Fetching users with params:', params);
       const response = await adminAPI.getUsers(userToken, params);
       
       if (newPage === 1) {
-        setUsers(response.results);
+        setUsers(response.results || []);
       } else {
-        setUsers(prevUsers => [...prevUsers, ...response.results]);
+        setUsers(prevUsers => [...prevUsers, ...(response.results || [])]);
       }
       
-      setTotalUsers(response.count);
+      setTotalUsers(response.count || 0);
       setHasMore(response.next !== null);
       setPage(newPage);
     } catch (error) {
       console.error('Error fetching users:', error);
+      setError(error.message || 'Không thể tải danh sách người dùng');
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
   };
 
+  // Fetch pending roles count
+  const fetchPendingRolesCount = async () => {
+    try {
+      const response = await adminAPI.getPendingRoles(userToken);
+      setPendingRolesCount(response.length || 0);
+    } catch (error) {
+      console.error('Error fetching pending roles count:', error);
+    }
+  };
+
+  // Load more users when scrolling to bottom
   const handleLoadMore = () => {
     if (hasMore && !loading && !refreshing) {
       fetchUsers(page + 1);
     }
   };
 
+  // Refresh user list
   const onRefresh = async () => {
     setRefreshing(true);
     setPage(1);
     await fetchUsers(1);
+    fetchPendingRolesCount();
   };
 
+  // Handle search
   const handleSearch = () => {
     setPage(1);
     fetchUsers(1);
   };
 
+  // Apply filters - Sửa lỗi
   const applyFilters = (newFilters) => {
+    console.log('Applying filters:', newFilters);
     setPage(1);
     fetchUsers(1, newFilters);
   };
 
+  // Navigate to user detail
   const handleUserPress = (user) => {
-    navigation.navigate('UserDetail', { userId: user.id, user });
+    navigation.navigate('UserDetail', { userId: user.id });
   };
 
-  useEffect(() => {
-    fetchUsers();
-  }, []);
+  // Navigate to pending roles
+  const navigateToPendingRoles = () => {
+    navigation.navigate('PendingRoles');
+  };
 
+  // Fetch users on initial load and when returning to screen
+  useFocusEffect(
+    useCallback(() => {
+      fetchUsers();
+      fetchPendingRolesCount();
+    }, [])
+  );
+
+  // Get avatar URL
   const getAvatarUrl = (url) => {
     if (!url) return null;
     return url.startsWith('/static') ? null : url;
   };
 
+  // Render user item
   const renderUserItem = ({ item }) => (
     <TouchableOpacity onPress={() => handleUserPress(item)}>
       <Surface style={styles.userCard}>
@@ -353,7 +430,7 @@ const UserList = () => {
               defaultSource={require('../../../../assets/default_avatar.png')}
             />
           ) : (
-            <View style={styles.userAvatarPlaceholder}>
+            <View style={[styles.userAvatarPlaceholder, { backgroundColor: getUserColor(item.username) }]}>
               <Text style={styles.userAvatarText}>
                 {item.username ? item.username.substring(0, 2).toUpperCase() : '??'}
               </Text>
@@ -364,8 +441,8 @@ const UserList = () => {
             <View style={styles.userNameRow}>
               <Text style={styles.userName}>{item.username || 'N/A'}</Text>
               {item.active_role && (
-                <Badge style={styles.activeBadge}>
-                  {item.active_role.substring(0, 1)}
+                <Badge style={[styles.activeBadge, { backgroundColor: getRoleBadgeColor(item.active_role) }]}>
+                  {getRoleBadgeInitial(item.active_role)}
                 </Badge>
               )}
             </View>
@@ -395,6 +472,36 @@ const UserList = () => {
     </TouchableOpacity>
   );
 
+  // Tạo màu ngẫu nhiên dựa trên username
+  const getUserColor = (username) => {
+    if (!username) return '#1976D2';
+    
+    const colors = ['#1976D2', '#388E3C', '#D32F2F', '#7B1FA2', '#C2185B', '#F57C00', '#0097A7'];
+    const sum = username.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    return colors[sum % colors.length];
+  };
+
+  // Lấy màu tương ứng với vai trò
+  const getRoleBadgeColor = (role) => {
+    switch (role) {
+      case 'Admin': return '#F44336';
+      case 'Recruiter': return '#2196F3';
+      case 'JobSeeker': return '#4CAF50';
+      default: return '#9E9E9E';
+    }
+  };
+
+  // Lấy chữ cái đầu của vai trò
+  const getRoleBadgeInitial = (role) => {
+    switch (role) {
+      case 'Admin': return 'A';
+      case 'Recruiter': return 'R';
+      case 'JobSeeker': return 'J';
+      default: return '?';
+    }
+  };
+
+  // Render header
   const renderHeader = () => (
     <View style={styles.customHeader}>
       <TouchableOpacity 
@@ -406,31 +513,47 @@ const UserList = () => {
       
       <Text style={styles.headerTitle}>Quản lý người dùng</Text>
       
-      <TouchableOpacity 
-        style={styles.headerRightButton}
-        onPress={() => navigation.navigate('UserDetail', { userId: null })}
-      >
-        <MaterialCommunityIcons name="account-plus" size={24} color="#1E3A8A" />
-      </TouchableOpacity>
+      <Tooltip title="Danh sách vai trò chờ duyệt" enterTouchDelay={0}>
+        <TouchableOpacity 
+          style={styles.headerRightButton}
+          onPress={navigateToPendingRoles}
+        >
+          <MaterialCommunityIcons name="account-multiple-check" size={24} color="#1E3A8A" />
+          {pendingRolesCount > 0 && (
+            <Badge style={styles.pendingRolesBadge}>{pendingRolesCount}</Badge>
+          )}
+        </TouchableOpacity>
+      </Tooltip>
     </View>
   );
 
+  // Render search bar được cải thiện
   const renderSearchBar = () => (
-    <View style={styles.searchContainer}>
+    <View style={[styles.searchContainer, searchFocused && styles.searchContainerFocused]}>
       <Searchbar
-        placeholder="Tìm kiếm người dùng..."
+        placeholder="Tìm kiếm tên người dùng, email..."
         onChangeText={setSearchQuery}
         value={searchQuery}
         onSubmitEditing={handleSearch}
         style={styles.searchBar}
         inputStyle={styles.searchInput}
         iconColor="#1976D2"
+        onFocus={() => setSearchFocused(true)}
+        onBlur={() => setSearchFocused(false)}
+        placeholderTextColor="#9E9E9E"
+        clearButtonMode="while-editing"
+        theme={{ colors: { primary: '#1976D2' } }}
+        selectionColor="rgba(25, 118, 210, 0.2)"
       />
       <TouchableOpacity 
-        style={styles.filterButton}
+        style={[styles.filterButton, (filters.roles.length > 0 || filters.status !== 'all') && styles.activeFilterButton]}
         onPress={() => setFilterModalVisible(true)}
       >
-        <MaterialCommunityIcons name="filter-variant" size={24} color="#1976D2" />
+        <MaterialCommunityIcons 
+          name="filter-variant" 
+          size={24} 
+          color={(filters.roles.length > 0 || filters.status !== 'all') ? "#1976D2" : "#757575"} 
+        />
         {(filters.roles.length > 0 || filters.status !== 'all') && (
           <Badge style={styles.filterBadge}>
             {filters.roles.length + (filters.status !== 'all' ? 1 : 0)}
@@ -440,11 +563,26 @@ const UserList = () => {
     </View>
   );
 
+  // Render active filters
   const renderActiveFilters = () => {
     if (filters.roles.length === 0 && filters.status === 'all') return null;
     
     return (
       <View style={styles.activeFiltersContainer}>
+        <View style={styles.activeFiltersHeader}>
+          <Text style={styles.activeFiltersTitle}>Bộ lọc đang áp dụng:</Text>
+          <TouchableOpacity onPress={() => {
+            const resetFilters = {
+              roles: [],
+              status: 'all',
+              sortBy: filters.sortBy
+            };
+            setFilters(resetFilters);
+            applyFilters(resetFilters);
+          }}>
+            <Text style={styles.clearFiltersText}>Xóa tất cả</Text>
+          </TouchableOpacity>
+        </View>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.activeFiltersScroll}>
           {filters.roles.map(role => (
             <Chip
@@ -460,6 +598,11 @@ const UserList = () => {
               }}
               style={styles.activeFilterChip}
               textStyle={{color: '#1976D2'}}
+              icon={() => {
+                const roleIcon = role === 'Admin' ? 'shield-account' : 
+                               role === 'Recruiter' ? 'account-tie' : 'account-search';
+                return <MaterialCommunityIcons name={roleIcon} size={16} color="#1976D2" />;
+              }}
             >
               {role}
             </Chip>
@@ -478,6 +621,10 @@ const UserList = () => {
               }}
               style={styles.activeFilterChip}
               textStyle={{color: '#1976D2'}}
+              icon={() => {
+                const statusIcon = filters.status === 'active' ? 'account-check' : 'account-lock';
+                return <MaterialCommunityIcons name={statusIcon} size={16} color="#1976D2" />;
+              }}
             >
               {filters.status === 'active' ? 'Đang hoạt động' : 'Đã khóa'}
             </Chip>
@@ -487,6 +634,7 @@ const UserList = () => {
     );
   };
 
+  // Render stats
   const renderStats = () => (
     <Surface style={styles.statsCard}>
       <View style={styles.statsRow}>
@@ -512,6 +660,26 @@ const UserList = () => {
     </Surface>
   );
 
+  // Render error state
+  const renderError = () => {
+    if (!error) return null;
+    
+    return (
+      <View style={styles.errorContainer}>
+        <MaterialCommunityIcons name="alert-circle-outline" size={64} color="#F44336" />
+        <Text style={styles.errorText}>{error}</Text>
+        <Button 
+          mode="contained" 
+          onPress={onRefresh}
+          style={styles.retryButton}
+          icon="refresh"
+        >
+          Thử lại
+        </Button>
+      </View>
+    );
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
@@ -523,50 +691,53 @@ const UserList = () => {
         {renderActiveFilters()}
         {renderStats()}
         
-        {loading && page === 1 ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#1976D2" />
-            <Text style={styles.loadingText}>Đang tải danh sách người dùng...</Text>
-          </View>
-        ) : (
-          <FlatList
-            data={users}
-            renderItem={renderUserItem}
-            keyExtractor={(item) => item.id.toString()}
-            contentContainerStyle={styles.listContainer}
-            refreshControl={
-              <RefreshControl 
-                refreshing={refreshing} 
-                onRefresh={onRefresh} 
-                colors={["#1976D2"]} 
-              />
-            }
-            onEndReached={handleLoadMore}
-            onEndReachedThreshold={0.3}
-            ListFooterComponent={
-              hasMore && users.length > 0 ? (
-                <View style={styles.loadMoreContainer}>
-                  <ActivityIndicator size="small" color="#1976D2" />
-                  <Text style={styles.loadMoreText}>Đang tải thêm...</Text>
-                </View>
-              ) : null
-            }
-            ListEmptyComponent={
-              !loading ? (
-                <View style={styles.emptyContainer}>
-                  <MaterialCommunityIcons name="account-search" size={64} color="#BDBDBD" />
-                  <Text style={styles.emptyText}>Không tìm thấy người dùng</Text>
-                  <Button 
-                    mode="contained" 
-                    onPress={onRefresh}
-                    style={styles.retryButton}
-                  >
-                    Thử lại
-                  </Button>
-                </View>
-              ) : null
-            }
-          />
+        {error ? renderError() : (
+          loading && page === 1 ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color="#1976D2" />
+              <Text style={styles.loadingText}>Đang tải danh sách người dùng...</Text>
+            </View>
+          ) : (
+            <FlatList
+              data={users}
+              renderItem={renderUserItem}
+              keyExtractor={(item) => item.id?.toString() || Math.random().toString()}
+              contentContainerStyle={styles.listContainer}
+              refreshControl={
+                <RefreshControl 
+                  refreshing={refreshing} 
+                  onRefresh={onRefresh} 
+                  colors={["#1976D2"]} 
+                />
+              }
+              onEndReached={handleLoadMore}
+              onEndReachedThreshold={0.3}
+              ListFooterComponent={
+                hasMore && users.length > 0 ? (
+                  <View style={styles.loadMoreContainer}>
+                    <ActivityIndicator size="small" color="#1976D2" />
+                    <Text style={styles.loadMoreText}>Đang tải thêm...</Text>
+                  </View>
+                ) : null
+              }
+              ListEmptyComponent={
+                !loading ? (
+                  <View style={styles.emptyContainer}>
+                    <MaterialCommunityIcons name="account-search" size={64} color="#BDBDBD" />
+                    <Text style={styles.emptyText}>Không tìm thấy người dùng</Text>
+                    <Button 
+                      mode="contained" 
+                      onPress={onRefresh}
+                      style={styles.retryButton}
+                      icon="refresh"
+                    >
+                      Thử lại
+                    </Button>
+                  </View>
+                ) : null
+              }
+            />
+          )
         )}
       </View>
       
@@ -608,6 +779,13 @@ const styles = StyleSheet.create({
   },
   headerRightButton: {
     padding: 8,
+    position: 'relative',
+  },
+  pendingRolesBadge: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    backgroundColor: '#F44336',
   },
   contentContainer: {
     flex: 1,
@@ -619,6 +797,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderBottomWidth: 1,
     borderBottomColor: '#E5E7EB',
+    zIndex: 1,
+  },
+  searchContainerFocused: {
+    backgroundColor: '#EEF2FF',
+    borderBottomColor: '#1976D2',
   },
   searchBar: {
     flex: 1,
@@ -626,21 +809,26 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E0E0E0',
     backgroundColor: '#F5F7FA',
-    height: 40,
+    height: 44,
+    borderRadius: 22,
   },
   searchInput: {
     fontSize: 14,
   },
   filterButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: '#F5F7FA',
     justifyContent: 'center',
     alignItems: 'center',
     marginLeft: 8,
     borderWidth: 1,
     borderColor: '#E0E0E0',
+  },
+  activeFilterButton: {
+    borderColor: '#1976D2',
+    backgroundColor: '#E3F2FD',
   },
   filterBadge: {
     position: 'absolute',
@@ -650,136 +838,153 @@ const styles = StyleSheet.create({
   },
   activeFiltersContainer: {
     backgroundColor: '#fff',
-    paddingVertical: 8,
+    paddingTop: 8,
+    paddingBottom: 12,
     paddingHorizontal: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#E5E7EB',
+  },
+  activeFiltersHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  activeFiltersTitle: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#4B5563',
+  },
+  clearFiltersText: {
+    fontSize: 12,
+    color: '#1976D2',
+    fontWeight: '500',
   },
   activeFiltersScroll: {
     flexDirection: 'row',
   },
   activeFilterChip: {
     marginRight: 8,
-    backgroundColor: 'transparent',
-    borderColor: '#1976D2',
+    borderColor: '#BBDEFB',
+    backgroundColor: '#E3F2FD',
   },
   statsCard: {
     margin: 16,
     borderRadius: 12,
-    backgroundColor: '#fff',
     elevation: 2,
-    padding: 16,
+    backgroundColor: '#fff',
   },
   statsRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    justifyContent: 'space-around',
+    paddingVertical: 16,
   },
   statItem: {
     flex: 1,
     alignItems: 'center',
   },
-  statDivider: {
-    width: 1,
-    height: 30,
-    backgroundColor: '#E5E7EB',
-  },
   statValue: {
     fontSize: 20,
     fontWeight: 'bold',
     color: '#1E3A8A',
+    marginBottom: 4,
   },
   statLabel: {
     fontSize: 12,
-    color: '#64748B',
-    marginTop: 4,
+    color: '#6B7280',
+  },
+  statDivider: {
+    width: 1,
+    backgroundColor: '#E5E7EB',
   },
   listContainer: {
-    padding: 16,
-    paddingTop: 8,
+    paddingHorizontal: 16,
+    paddingBottom: 16,
   },
   userCard: {
     marginBottom: 12,
     borderRadius: 12,
+    overflow: 'hidden',
     elevation: 2,
     backgroundColor: '#fff',
-    overflow: 'hidden',
   },
   userCardContent: {
     flexDirection: 'row',
+    padding: 12,
     alignItems: 'center',
-    padding: 16,
   },
   userAvatar: {
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: '#E1F5FE',
+    backgroundColor: '#E0E0E0',
   },
   userAvatarPlaceholder: {
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: '#1976D2',
     justifyContent: 'center',
     alignItems: 'center',
   },
   userAvatarText: {
     color: '#fff',
-    fontSize: 18,
     fontWeight: 'bold',
+    fontSize: 18,
   },
   userInfo: {
     flex: 1,
-    marginLeft: 16,
+    marginLeft: 12,
   },
   userNameRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginBottom: 2,
   },
   userName: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#1F2937',
+    marginRight: 8,
   },
   activeBadge: {
-    backgroundColor: '#1976D2',
-    marginLeft: 8,
+    height: 20,
+    minWidth: 20,
+    borderRadius: 10,
+    fontSize: 10,
   },
   userEmail: {
-    fontSize: 14,
-    color: '#757575',
-    marginTop: 2,
+    fontSize: 12,
+    color: '#6B7280',
+    marginBottom: 4,
   },
   userFullName: {
-    fontSize: 14,
-    color: '#333',
-    marginTop: 2,
+    fontSize: 13,
+    color: '#4B5563',
+    marginBottom: 4,
   },
   userRoles: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    marginTop: 8,
   },
   roleChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 4,
     paddingHorizontal: 8,
-    borderRadius: 16,
-    marginRight: 8,
+    paddingVertical: 3,
+    borderRadius: 12,
+    marginRight: 6,
     marginBottom: 4,
   },
   activeRoleChip: {
-    elevation: 2,
+    elevation: 1,
   },
   roleText: {
-    fontSize: 12,
+    fontSize: 10,
     marginLeft: 4,
-    fontWeight: '500',
   },
   activeRoleText: {
     color: '#fff',
+    fontWeight: '500',
   },
   inactiveRoleText: {
     color: '#333',
@@ -788,26 +993,12 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingTop: 50,
+    padding: 16,
   },
   loadingText: {
-    marginTop: 16,
-    color: '#757575',
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 32,
-    marginTop: 40,
-  },
-  emptyText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: '#757575',
-    marginBottom: 16,
-  },
-  retryButton: {
-    backgroundColor: '#1976D2',
+    marginTop: 12,
+    fontSize: 14,
+    color: '#6B7280',
   },
   loadMoreContainer: {
     flexDirection: 'row',
@@ -817,13 +1008,44 @@ const styles = StyleSheet.create({
   },
   loadMoreText: {
     marginLeft: 8,
-    color: '#757575',
+    fontSize: 14,
+    color: '#6B7280',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 48,
+  },
+  emptyText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#6B7280',
+    marginBottom: 16,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+  },
+  errorText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#F44336',
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  retryButton: {
+    marginTop: 8,
+    backgroundColor: '#1976D2',
   },
   modalContainer: {
     backgroundColor: 'white',
-    margin: 20,
+    margin: 24,
     borderRadius: 12,
-    maxHeight: height * 0.7,
+    overflow: 'hidden',
+    maxHeight: height * 0.8,
   },
   modalHeader: {
     flexDirection: 'row',
@@ -835,17 +1057,17 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#1F2937',
   },
   modalContent: {
     padding: 16,
-    maxHeight: height * 0.5,
+    maxHeight: height * 0.6,
   },
   filterSectionTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 12,
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#4B5563',
+    marginBottom: 8,
     marginTop: 8,
   },
   filterChipGroup: {
@@ -868,6 +1090,7 @@ const styles = StyleSheet.create({
   },
   resetButton: {
     marginRight: 8,
+    borderColor: '#1976D2',
   },
   applyButton: {
     backgroundColor: '#1976D2',

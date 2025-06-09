@@ -53,18 +53,24 @@ class LoginSerializer(serializers.Serializer):
 
 # Thông tin người dùng
 class UserSerializer(serializers.ModelSerializer):
-    roles = serializers.StringRelatedField(many=True)
+    roles = serializers.StringRelatedField(many=True, read_only=True)
     # roles = serializers.SerializerMethodField()
     avatar_url = serializers.ReadOnlyField()
     active_role = serializers.SerializerMethodField()
 
     class Meta:
         model = MyUser
-        fields = ('id', 'username', 'first_name', 'last_name','email', 'avatar_url', 'roles', 'active_role')
+        fields = ('id', 'username', 'first_name', 'last_name','email', 'avatar_url', 'roles', 'active_role', 'is_active')
     
     def get_active_role(self, obj):
         # Lấy tên của active_role thay vì ID
         return obj.active_role.name if obj.active_role else None
+
+    def get_avatar_url(self, obj):
+        if obj.avatar_url:
+            return obj.avatar_url
+        else:
+            return None
     
 # Đổi mật khẩu
 class ChangePasswordSerializer(serializers.Serializer):

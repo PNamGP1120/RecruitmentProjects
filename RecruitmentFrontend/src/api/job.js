@@ -14,7 +14,7 @@ import { JOB_TYPES, JOB_TYPE_LABELS } from './config';
 export const getJobs = async (params = {}) => {
   // Thêm log để debug
   console.log('Calling getJobs with params:', params);
-  
+
   // Đảm bảo các tham số lọc được format đúng
   const formattedParams = {
     search: params.search,
@@ -28,7 +28,7 @@ export const getJobs = async (params = {}) => {
   };
 
   // Loại bỏ các tham số undefined
-  Object.keys(formattedParams).forEach(key => 
+  Object.keys(formattedParams).forEach(key =>
     formattedParams[key] === undefined && delete formattedParams[key]
   );
 
@@ -45,6 +45,10 @@ export const getJobs = async (params = {}) => {
 export const getJobDetail = async (slug, token) => {
   return apiRequest(ENDPOINTS.JOB_DETAIL(slug), 'GET', token);
 };
+
+export const getJobDetails = async (token, slug) => {
+    return getJobDetail(slug, token);
+  };
 
 /**
  * Lấy danh sách tin tuyển dụng nổi bật
@@ -219,7 +223,7 @@ export const searchJobs = async (searchParams = {}) => {
         if (!searchParams.search) {
             throw new Error('Search keyword is required');
         }
-        
+
         console.log('Searching jobs with params:', searchParams); // Thêm log để debug
         return getJobs(searchParams);
     } catch (error) {

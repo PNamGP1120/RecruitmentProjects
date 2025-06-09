@@ -1,5 +1,5 @@
 // src/screens/Admin/JobManagement/PendingJobs.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, FlatList, StyleSheet, Alert } from 'react-native';
 import {
   Card,
@@ -20,6 +20,7 @@ import {
 } from 'react-native-paper';
 import { MaterialIcons } from '@expo/vector-icons';
 import * as adminAPI from '../../../api/admin';
+import { useFocusEffect } from '@react-navigation/native';
 
 const PendingJobs = ({ navigation }) => {
   const [jobs, setJobs] = useState([]);
@@ -35,10 +36,12 @@ const PendingJobs = ({ navigation }) => {
 
   const fetchPendingJobs = async () => {
     try {
+      setLoading(true);
       const response = await adminAPI.getPendingJobs({
         search: searchQuery,
         sort_by: sortBy,
         order: sortOrder,
+        status: 'Pending',
       });
       setJobs(response.data);
     } catch (error) {
@@ -50,9 +53,12 @@ const PendingJobs = ({ navigation }) => {
     }
   };
 
-  useEffect(() => {
-    fetchPendingJobs();
-  }, [searchQuery, sortBy, sortOrder]);
+  // Fetch jobs on initial load and when returning to screen
+  useFocusEffect(
+    useCallback(() => {
+      fetchPendingJobs();
+    }, [searchQuery, sortBy, sortOrder])
+  );
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -134,7 +140,7 @@ const PendingJobs = ({ navigation }) => {
         </View>
 
         <View style={styles.skillsContainer}>
-          {item.skills.map((skill) => (
+          {item.skills && item.skills.map((skill) => (
             <Chip
               key={skill.id}
               style={styles.skillChip}
@@ -188,6 +194,7 @@ const PendingJobs = ({ navigation }) => {
           onChangeText={setSearchQuery}
           value={searchQuery}
           style={styles.searchbar}
+          onSubmitEditing={fetchPendingJobs}
         />
         <View style={styles.filterContainer}>
           <Button
@@ -201,7 +208,7 @@ const PendingJobs = ({ navigation }) => {
           <Menu
             visible={filterMenuVisible}
             onDismiss={() => setFilterMenuVisible(false)}
-            anchor={styles.filterMenu}
+            anchor={{}}
           >
             <Menu.Item
               onPress={() => {

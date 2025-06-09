@@ -60,5 +60,6 @@ class Interview(BaseModel):
         verbose_name = "Phỏng vấn"
         verbose_name_plural = "Các buổi phỏng vấn"
 
+
     def __str__(self):
         return f"Phỏng vấn {self.application.job_seeker.username} - {self.application.job_posting.title} vào {self.scheduled_at}"

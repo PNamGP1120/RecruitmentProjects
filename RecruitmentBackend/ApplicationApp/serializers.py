@@ -15,8 +15,7 @@ class ApplicationSerializer(serializers.ModelSerializer):
 
     # Giữ lại các trường ID cho việc tạo/cập nhật
     job_posting = serializers.PrimaryKeyRelatedField(queryset=JobPosting.objects.all(), write_only=True)
-    resume = serializers.PrimaryKeyRelatedField(queryset=Resume.objects.all(), required=False, allow_null=True,
-                                                write_only=True)
+    resume = serializers.PrimaryKeyRelatedField(queryset=Resume.objects.all(), required=False, allow_null=True, write_only=True)
 
     job_posting_title = serializers.CharField(source='job_posting.title', read_only=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)

@@ -81,6 +81,10 @@ export const assignAdmin = async (token, userId) => {
  * Job Management APIs
  */
 
+export const getJobDetail = async (slug, token = null) => {
+    return apiRequest(ENDPOINTS.JOB_DETAIL(slug), 'GET', token);
+  };
+
 export const getPendingJobs = async (token, params = {}) => {
     try {
         const queryString = new URLSearchParams(params).toString();
@@ -114,6 +118,30 @@ export const rejectJob = async (token, jobId, reason) => {
 /**
  * Skills Management APIs
  */
+
+/**
+ * Skills Management APIs
+ */
+
+export const getSkills = async (token, params = {}) => {
+    try {
+        const queryString = new URLSearchParams(params).toString();
+        const endpoint = `${ENDPOINTS.ADMIN.SKILLS}${queryString ? `?${queryString}` : ''}`;
+        return await apiRequest(endpoint, 'GET', token);
+    } catch (error) {
+        console.error('Error in getSkills:', error);
+        throw error;
+    }
+};
+
+export const getSkillDetail = async (token, skillId) => {
+    try {
+        return await apiRequest(ENDPOINTS.ADMIN.SKILL_DETAIL(skillId), 'GET', token);
+    } catch (error) {
+        console.error('Error in getSkillDetail:', error);
+        throw error;
+    }
+};
 
 export const createSkill = async (token, skillData) => {
     try {

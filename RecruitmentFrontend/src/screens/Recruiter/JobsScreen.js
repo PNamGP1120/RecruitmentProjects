@@ -29,6 +29,7 @@ const JobsScreen = ({ navigation }) => {
             setError(null);
             const response = await getRecruiterJobs(userToken, userInfo?.id);
             if (response && response.results) {
+                console.log('Jobs:', response.results);
                 setJobs(response.results);
             }
         } catch (err) {
@@ -44,7 +45,10 @@ const JobsScreen = ({ navigation }) => {
     useFocusEffect(
         React.useCallback(() => {
             fetchJobs();
-        }, [])
+            return () => {
+                // Cleanup nếu cần
+            };
+        }, [userToken, userInfo?.id])
     );
 
     const onRefresh = () => {
@@ -157,14 +161,16 @@ const JobsScreen = ({ navigation }) => {
                 style={styles.jobCard}
                 onPress={() => navigation.navigate('JobDetail', { slug: job.slug })}
             >
-                <View style={styles.jobHeader}>
-                    <Text style={styles.jobTitle}>{job.title}</Text>
-                    <View style={[styles.statusBadge,
-                    { backgroundColor: job.status === 'Approved' ? '#28a745' : '#6c757d' }]}>
-                        <Text style={styles.statusText}>
-                            {job.status === 'Approved' ? 'Đang tuyển' : 'Bản nháp'}
-                        </Text>
-                    </View>
+                <View style={[styles.statusBadge,
+                {
+                    backgroundColor:
+                        job.status === 'Approved' ? '#28a745' :
+                            job.status === 'Pending' ? '#ffc107' : '#6c757d'
+                }]}>
+                    <Text style={styles.statusText}>
+                        {job.status === 'Approved' ? 'Đang tuyển' :
+                            job.status === 'Pending' ? 'Chờ duyệt' : 'Bản nháp'}
+                    </Text>
                 </View>
                 <View style={styles.companyInfo}>
                     <Ionicons name="business-outline" size={16} color="#666" />

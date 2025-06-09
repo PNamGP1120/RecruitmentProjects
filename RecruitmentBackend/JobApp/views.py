@@ -158,7 +158,8 @@ class JobPostingViewSet(viewsets.ModelViewSet):
         user = self.request.user
 
         # Nếu user là admin
-        if user.is_superuser:
+        if user.is_superuser or (user.active_role and user.active_role.name == 'Admin' and user.user_roles.filter(role__name='Admin',
+                                                                                            is_approved=True).exists()):
             return JobPosting.objects.all()
 
         # Nếu user là recruiter, chỉ xem việc làm của chính họ

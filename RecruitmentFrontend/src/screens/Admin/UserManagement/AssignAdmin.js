@@ -46,7 +46,9 @@ const AssignAdmin = ({ navigation }) => {
           text: 'Xác nhận', 
           onPress: async () => {
             try {
+              console.log(selectedUser.id);
               setLoading(true);
+              console.log(selectedUser.id);
               await adminAPI.assignAdmin(userToken, selectedUser.id);
               Alert.alert(
                 'Thành công', 

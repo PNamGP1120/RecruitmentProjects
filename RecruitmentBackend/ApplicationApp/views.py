@@ -15,12 +15,20 @@ class ApplicationViewSet(viewsets.ModelViewSet):
     serializer_class = ApplicationSerializer
     permission_classes = [IsAuthenticatedAndApproved]
 
+    # def get_queryset(self):
+    #     user = self.request.user
+    #     if user.active_role.name == 'JobSeeker':
+    #         return Application.objects.filter(job_seeker=user)
+    #     if user.active_role.name == 'Recruiter':
+    #         return Application.objects.filter(job_posting__recruiter=user)
+    #     return Application.objects.all()
+
     def get_queryset(self):
         user = self.request.user
         if user.active_role.name == 'JobSeeker':
             return Application.objects.filter(job_seeker=user)
         if user.active_role.name == 'Recruiter':
-            return Application.objects.filter(job_posting__recruiter=user)
+            return Application.objects.filter(job_posting__recruiter_profile__user=user)
         return Application.objects.all()
 
     def perform_create(self, serializer):
@@ -85,7 +93,12 @@ class InterviewViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         import uuid
         jitsi_link = f"https://meet.jit.si/recruitment-{uuid.uuid4().hex[:8]}"
-        serializer.save(location=jitsi_link)
+
+        interview = serializer.save(location=jitsi_link)
+
+        application = interview.application
+        application.status = ApplicationStatus.INTERVIEW_SCHEDULED
+        application.save()
 
     @action(detail=True, methods=['post'], permission_classes=[IsRecruiter])
     def cancel(self, request, pk=None):
