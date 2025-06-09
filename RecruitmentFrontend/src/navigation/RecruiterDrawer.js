@@ -5,7 +5,8 @@ import {
     StyleSheet,
     TouchableOpacity,
     Image,
-    ScrollView
+    ScrollView,
+    Alert
 } from 'react-native';
 import { DrawerContentScrollView } from '@react-navigation/drawer';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -14,47 +15,91 @@ import { AuthContext } from '../contexts/AuthContext';
 export default function RecruiterDrawer(props) {
     const { signOut, userInfo } = useContext(AuthContext);
 
-    // Danh sách menu cho nhà tuyển dụng
+    const handleLogout = () => {
+        Alert.alert(
+            'Xác nhận đăng xuất',
+            'Bạn có chắc chắn muốn đăng xuất?',
+            [
+                { text: 'Hủy', style: 'cancel' },
+                { 
+                    text: 'Đăng xuất', 
+                    onPress: () => {
+                        signOut();
+                        props.navigation.closeDrawer();
+                    }, 
+                    style: 'destructive' 
+                }
+            ]
+        );
+    };
+
+    // Navigation helper function to handle nested navigation
+    const navigateToScreen = (routeName) => {
+        // Close the drawer
+        props.navigation.closeDrawer();
+        
+        // For screens in the main stack, we need to navigate through MainStack
+        props.navigation.navigate('MainStack', { 
+            screen: routeName 
+        });
+    };
+
+    // Custom menu items
     const menuItems = [
         {
             icon: 'home-outline',
             label: 'Trang chủ',
-            navigateTo: 'Home'
+            onPress: () => navigateToScreen('RecruiterTabs')
         },
         {
             icon: 'briefcase-outline',
             label: 'Quản lý việc làm',
-            navigateTo: 'Jobs'
+            onPress: () => navigateToScreen('Jobs')
         },
         {
             icon: 'people-outline',
             label: 'Quản lý ứng viên',
-            navigateTo: 'CandidateList'
+            onPress: () => navigateToScreen('CandidateList')
+        },
+        {
+            icon: 'add-circle-outline',
+            label: 'Đăng tin tuyển dụng',
+            onPress: () => navigateToScreen('CreateJob')
         },
         {
             icon: 'chatbubbles-outline',
             label: 'Tin nhắn',
-            navigateTo: 'Conversations'
+            onPress: () => navigateToScreen('Conversations')
         },
         {
             icon: 'calendar-outline',
             label: 'Lịch phỏng vấn',
-            navigateTo: 'ScheduleInterview'
+            onPress: () => navigateToScreen('ScheduleInterview')
         },
         {
             icon: 'business-outline',
             label: 'Thông tin công ty',
-            navigateTo: 'CompanyProfile'
+            onPress: () => navigateToScreen('CompanyProfile')
         },
         {
             icon: 'bar-chart-outline',
             label: 'Báo cáo & Thống kê',
-            navigateTo: 'Report'
+            onPress: () => navigateToScreen('Report')
         },
         {
             icon: 'person-outline',
             label: 'Tài khoản',
-            navigateTo: 'Profile'
+            onPress: () => navigateToScreen('Profile')
+        },
+        {
+            icon: 'help-circle-outline',
+            label: 'Trợ giúp & Hỗ trợ',
+            onPress: () => navigateToScreen('Help')
+        },
+        {
+            icon: 'information-circle-outline',
+            label: 'Giới thiệu',
+            onPress: () => navigateToScreen('About')
         }
     ];
 
@@ -80,9 +125,7 @@ export default function RecruiterDrawer(props) {
                     <TouchableOpacity
                         key={index}
                         style={styles.menuItem}
-                        onPress={() => {
-                            props.navigation.navigate(item.navigateTo);
-                        }}
+                        onPress={item.onPress}
                     >
                         <Ionicons name={item.icon} size={24} color="#004aad" />
                         <Text style={styles.menuText}>{item.label}</Text>
@@ -93,10 +136,7 @@ export default function RecruiterDrawer(props) {
             {/* Nút đăng xuất */}
             <TouchableOpacity
                 style={styles.logoutButton}
-                onPress={() => {
-                    signOut();
-                    props.navigation.closeDrawer();
-                }}
+                onPress={handleLogout}
             >
                 <Ionicons name="log-out-outline" size={24} color="#ff4444" />
                 <Text style={styles.logoutText}>Đăng xuất</Text>

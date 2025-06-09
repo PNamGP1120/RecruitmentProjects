@@ -65,7 +65,7 @@ const EditProfileScreen = ({ route, navigation }) => {
                 const uri = result.assets[0].uri;
                 try {
                     const formData = new FormData();
-                    formData.append('logo', {
+                    formData.append('company_logo', {
                         uri,
                         type: 'image/jpeg',
                         name: 'company_logo.jpg',

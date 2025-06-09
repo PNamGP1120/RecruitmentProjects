@@ -1,185 +1,164 @@
-// src/screens/Common/ChatScreen.js
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useContext, useRef, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  FlatList,
   TextInput,
   TouchableOpacity,
-  SafeAreaView,
+  FlatList,
   KeyboardAvoidingView,
   Platform,
+  SafeAreaView,
   ActivityIndicator,
-  Image,
-  Alert
+  Image
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '../../contexts/AuthContext';
-import { sendMessage, listenForMessages, loadMessages } from '../../api/firebaseService';
-import { ref, onChildAdded, get } from 'firebase/database';
-import { database } from '../../firebaseConfig';
+import Ionicons from 'react-native-vector-icons/Ionicons';
+import { AuthContext } from '../../contexts/AuthContext';
+import { useChat } from '../../contexts/ChatContext';
 
 const ChatScreen = ({ route, navigation }) => {
-  const { userInfo } = useAuth();
-  const { conversationId, otherUser } = route.params;
-  const [messages, setMessages] = useState([]);
-  const [inputText, setInputText] = useState('');
-  const [loading, setLoading] = useState(true);
+  const { conversationId } = route.params;
+  const { userInfo } = useContext(AuthContext);
+  const { currentConversation, messages, loading, sendMessage, getOtherParticipant } = useChat();
+  const [messageText, setMessageText] = useState('');
   const flatListRef = useRef(null);
-  const [messageSending, setMessageSending] = useState(false);
 
+  // Lấy thông tin người dùng khác trong cuộc trò chuyện
+  const otherUser = currentConversation ? getOtherParticipant(currentConversation) : null;
+
+  // Cuộn xuống tin nhắn mới nhất khi có tin nhắn mới
   useEffect(() => {
-    // Cập nhật tiêu đề
-    navigation.setOptions({
-      title: otherUser.name || 'Chat',
-      headerRight: () => (
-        <TouchableOpacity 
-          style={styles.headerButton}
-          onPress={() => {
-            // Hiển thị thông tin người dùng
-            Alert.alert(
-              otherUser.name || 'Thông tin',
-              'Bạn đang trò chuyện với ' + otherUser.name
-            );
-          }}
-        >
-          <Ionicons name="information-circle-outline" size={24} color="#fff" />
-        </TouchableOpacity>
-      )
-    });
-
-    // Tải tin nhắn cũ
-    const fetchMessages = async () => {
-      try {
-        setLoading(true);
-        const oldMessages = await loadMessages(conversationId);
-        setMessages(oldMessages);
-        setLoading(false);
-      } catch (error) {
-        console.error('Error loading messages:', error);
-        setLoading(false);
-      }
-    };
-    
-    fetchMessages();
-    
-    // Lắng nghe tin nhắn mới
-    const messagesRef = ref(database, `conversations/${conversationId}/messages`);
-    const unsubscribe = onChildAdded(messagesRef, (snapshot) => {
-      const newMessage = {
-        id: snapshot.key,
-        ...snapshot.val()
-      };
-      
-      // Kiểm tra xem tin nhắn đã tồn tại chưa
-      setMessages(prevMessages => {
-        if (!prevMessages.some(msg => msg.id === newMessage.id)) {
-          return [...prevMessages, newMessage];
-        }
-        return prevMessages;
-      });
-    });
-    
-    return () => unsubscribe();
-  }, [conversationId, navigation, otherUser]);
-
-  const handleSend = async () => {
-    if (inputText.trim() && !messageSending) {
-      setMessageSending(true);
-      const messageContent = inputText.trim();
-      setInputText('');
-      
-      try {
-        await sendMessage(conversationId, userInfo.id, messageContent);
-      } catch (error) {
-        console.error('Không thể gửi tin nhắn:', error);
-        Alert.alert('Lỗi', 'Không thể gửi tin nhắn. Vui lòng thử lại sau.');
-        setInputText(messageContent); // Khôi phục nội dung tin nhắn nếu gửi thất bại
-      } finally {
-        setMessageSending(false);
-      }
+    if (messages.length > 0 && flatListRef.current) {
+      setTimeout(() => {
+        flatListRef.current.scrollToEnd({ animated: true });
+      }, 100);
     }
+  }, [messages]);
+
+  // Xử lý khi gửi tin nhắn
+  const handleSend = () => {
+    if (!messageText.trim()) return;
+    
+    sendMessage(messageText.trim());
+    setMessageText('');
   };
 
-  const formatTime = (timestamp) => {
-    if (!timestamp) return '';
-    const date = new Date(timestamp);
-    return date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+  // Định dạng thời gian
+  const formatMessageTime = (timestamp) => {
+    if (!timestamp || !timestamp.toDate) return '';
+    
+    const date = timestamp.toDate();
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
-  const renderDate = (timestamp, prevTimestamp) => {
-    if (!timestamp) return null;
+  // Render một tin nhắn
+  const renderMessage = ({ item }) => {
+    const isMyMessage = item.senderId === userInfo.id;
     
-    const date = new Date(timestamp);
-    const prevDate = prevTimestamp ? new Date(prevTimestamp) : null;
-    
-    // Nếu không có tin nhắn trước hoặc khác ngày, hiển thị ngày
-    if (!prevDate || date.toDateString() !== prevDate.toDateString()) {
-      const today = new Date();
-      const yesterday = new Date(today);
-      yesterday.setDate(yesterday.getDate() - 1);
-      
-      let dateText;
-      if (date.toDateString() === today.toDateString()) {
-        dateText = 'Hôm nay';
-      } else if (date.toDateString() === yesterday.toDateString()) {
-        dateText = 'Hôm qua';
-      } else {
-        dateText = date.toLocaleDateString('vi-VN', { 
-          day: '2-digit',
-          month: '2-digit',
-          year: 'numeric'
-        });
-      }
-      
-      return (
-        <View style={styles.dateContainer}>
-          <Text style={styles.dateText}>{dateText}</Text>
+    return (
+      <View style={[
+        styles.messageContainer,
+        isMyMessage ? styles.myMessageContainer : styles.otherMessageContainer
+      ]}>
+        {!isMyMessage && (
+          <View style={styles.messageAvatar}>
+            {otherUser?.avatar ? (
+              <Image source={{ uri: otherUser.avatar }} style={styles.avatarImage} />
+            ) : (
+              <View style={styles.avatarFallback}>
+                <Text style={styles.avatarText}>
+                  {otherUser?.name ? otherUser.name.charAt(0).toUpperCase() : '?'}
+                </Text>
+              </View>
+            )}
+          </View>
+        )}
+        
+        <View style={[
+          styles.messageBubble,
+          isMyMessage ? styles.myMessageBubble : styles.otherMessageBubble
+        ]}>
+          <Text style={[
+            styles.messageText,
+            isMyMessage ? styles.myMessageText : styles.otherMessageText
+          ]}>
+            {item.text}
+          </Text>
+          <Text style={[
+            styles.messageTime,
+            isMyMessage ? styles.myMessageTime : styles.otherMessageTime
+          ]}>
+            {formatMessageTime(item.timestamp)}
+          </Text>
         </View>
-      );
-    }
-    
-    return null;
+      </View>
+    );
   };
+
+  // Render header
+  const renderHeader = () => (
+    <View style={styles.header}>
+      <TouchableOpacity
+        style={styles.backButton}
+        onPress={() => navigation.goBack()}
+      >
+        <Ionicons name="arrow-back" size={24} color="#333" />
+      </TouchableOpacity>
+      
+      <View style={styles.headerInfo}>
+        {otherUser?.avatar ? (
+          <Image source={{ uri: otherUser.avatar }} style={styles.headerAvatar} />
+        ) : (
+          <View style={styles.headerAvatarFallback}>
+            <Text style={styles.headerAvatarText}>
+              {otherUser?.name ? otherUser.name.charAt(0).toUpperCase() : '?'}
+            </Text>
+          </View>
+        )}
+        
+        <View>
+          <Text style={styles.headerName}>{otherUser?.name || 'Người dùng'}</Text>
+        </View>
+      </View>
+    </View>
+  );
+
+  // Render khi không có tin nhắn
+  const renderEmptyChat = () => (
+    <View style={styles.emptyChatContainer}>
+      <Ionicons name="chatbubbles-outline" size={64} color="#ccc" />
+      <Text style={styles.emptyChatText}>Chưa có tin nhắn nào</Text>
+      <Text style={styles.emptyChatSubText}>
+        Hãy bắt đầu cuộc trò chuyện
+      </Text>
+    </View>
+  );
 
   return (
     <SafeAreaView style={styles.container}>
+      {renderHeader()}
+      
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.container}
+        style={styles.keyboardAvoidingView}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
       >
         {loading ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color="#004aad" />
-            <Text style={styles.loadingText}>Đang tải tin nhắn...</Text>
           </View>
         ) : (
           <FlatList
             ref={flatListRef}
             data={messages}
-            keyExtractor={(item, index) => item.id || index.toString()}
-            onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: false })}
-            onLayout={() => flatListRef.current?.scrollToEnd({ animated: false })}
-            renderItem={({ item, index }) => {
-              const prevItem = index > 0 ? messages[index - 1] : null;
-              const isMyMessage = item.senderId === userInfo.id;
-              
-              return (
-                <>
-                  {renderDate(item.timestamp, prevItem?.timestamp)}
-                  <View style={[
-                    styles.messageBubble,
-                    isMyMessage ? styles.myMessage : styles.theirMessage
-                  ]}>
-                    <Text style={styles.messageText}>{item.content}</Text>
-                    <Text style={styles.timestamp}>
-                      {formatTime(item.timestamp)}
-                    </Text>
-                  </View>
-                </>
-              );
+            keyExtractor={(item) => item.id}
+            renderItem={renderMessage}
+            contentContainerStyle={styles.messagesList}
+            ListEmptyComponent={renderEmptyChat}
+            onContentSizeChange={() => {
+              if (messages.length > 0 && flatListRef.current) {
+                flatListRef.current.scrollToEnd({ animated: false });
+              }
             }}
           />
         )}
@@ -187,27 +166,24 @@ const ChatScreen = ({ route, navigation }) => {
         <View style={styles.inputContainer}>
           <TextInput
             style={styles.input}
-            value={inputText}
-            onChangeText={setInputText}
-            placeholder="Nhắn tin..."
-            placeholderTextColor="#999"
+            placeholder="Nhập tin nhắn..."
+            value={messageText}
+            onChangeText={setMessageText}
             multiline
-            maxLength={500}
           />
-          <TouchableOpacity 
-            onPress={handleSend} 
-            style={styles.sendButton}
-            disabled={!inputText.trim() || messageSending}
+          <TouchableOpacity
+            style={[
+              styles.sendButton,
+              !messageText.trim() && styles.disabledSendButton
+            ]}
+            onPress={handleSend}
+            disabled={!messageText.trim()}
           >
-            {messageSending ? (
-              <ActivityIndicator size="small" color="#007AFF" />
-            ) : (
-              <Ionicons 
-                name="send" 
-                size={24} 
-                color={inputText.trim() ? "#007AFF" : "#CCC"} 
-              />
-            )}
+            <Ionicons
+              name="send"
+              size={24}
+              color={messageText.trim() ? '#004aad' : '#ccc'}
+            />
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
@@ -218,84 +194,168 @@ const ChatScreen = ({ route, navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5'
+    backgroundColor: '#f5f5f5',
   },
-  headerButton: {
-    padding: 10
+  keyboardAvoidingView: {
+    flex: 1,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  backButton: {
+    padding: 4,
+  },
+  headerInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: 12,
+  },
+  headerAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 12,
+  },
+  headerAvatarFallback: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#e1e1e1',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  headerAvatarText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#555',
+  },
+  headerName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
-    alignItems: 'center'
-  },
-  loadingText: {
-    marginTop: 10,
-    color: '#666'
-  },
-  dateContainer: {
     alignItems: 'center',
-    marginVertical: 10
   },
-  dateText: {
+  messagesList: {
+    flexGrow: 1,
+    padding: 16,
+  },
+  messageContainer: {
+    flexDirection: 'row',
+    marginBottom: 16,
+    maxWidth: '80%',
+  },
+  myMessageContainer: {
+    alignSelf: 'flex-end',
+  },
+  otherMessageContainer: {
+    alignSelf: 'flex-start',
+  },
+  messageAvatar: {
+    marginRight: 8,
+    alignSelf: 'flex-end',
+  },
+  avatarImage: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+  },
+  avatarFallback: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#e1e1e1',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  avatarText: {
     fontSize: 12,
-    color: '#666',
-    backgroundColor: '#E0E0E0',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 10
+    fontWeight: 'bold',
+    color: '#555',
   },
   messageBubble: {
-    maxWidth: '75%',
-    padding: 10,
-    borderRadius: 18,
-    marginVertical: 2,
-    marginHorizontal: 10
+    padding: 12,
+    borderRadius: 16,
+    maxWidth: '100%',
   },
-  myMessage: {
-    alignSelf: 'flex-end',
-    backgroundColor: '#DCF8C6',
-    borderBottomRightRadius: 5
+  myMessageBubble: {
+    backgroundColor: '#004aad',
+    borderBottomRightRadius: 4,
   },
-  theirMessage: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#FFFFFF',
-    borderBottomLeftRadius: 5
+  otherMessageBubble: {
+    backgroundColor: '#fff',
+    borderBottomLeftRadius: 4,
   },
   messageText: {
     fontSize: 16,
-    color: '#000'
   },
-  timestamp: {
-    fontSize: 11,
-    color: '#888888',
+  myMessageText: {
+    color: '#fff',
+  },
+  otherMessageText: {
+    color: '#333',
+  },
+  messageTime: {
+    fontSize: 10,
+    marginTop: 4,
     alignSelf: 'flex-end',
-    marginTop: 2
+  },
+  myMessageTime: {
+    color: 'rgba(255, 255, 255, 0.7)',
+  },
+  otherMessageTime: {
+    color: '#999',
   },
   inputContainer: {
     flexDirection: 'row',
-    padding: 10,
-    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    padding: 8,
+    backgroundColor: '#fff',
     borderTopWidth: 1,
-    borderTopColor: '#E0E0E0',
-    alignItems: 'center'
+    borderTopColor: '#eee',
   },
   input: {
     flex: 1,
-    backgroundColor: '#F0F0F0',
+    backgroundColor: '#f0f0f0',
     borderRadius: 20,
-    paddingHorizontal: 15,
+    paddingHorizontal: 16,
     paddingVertical: 8,
     maxHeight: 100,
-    fontSize: 16
   },
   sendButton: {
-    marginLeft: 10,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    marginLeft: 8,
+    padding: 8,
+  },
+  disabledSendButton: {
+    opacity: 0.5,
+  },
+  emptyChatContainer: {
+    flex: 1,
     justifyContent: 'center',
-    alignItems: 'center'
-  }
+    alignItems: 'center',
+    padding: 32,
+  },
+  emptyChatText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+    marginTop: 16,
+  },
+  emptyChatSubText: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    marginTop: 8,
+  },
 });
 
 export default ChatScreen;

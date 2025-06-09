@@ -6,7 +6,6 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import StartScreen from '../screens/StartScreen';
 import LoginScreen from '../screens/Auth/LoginScreen';
 import JobSeekerHomeScreen from '../screens/JobSeeker/HomeScreen';
-import ChatScreen from '../screens/JobSeeker/ChatScreen';
 
 import { AuthContext } from '../contexts/AuthContext';
 import JobSeekerStack from './JobSeekerStack';

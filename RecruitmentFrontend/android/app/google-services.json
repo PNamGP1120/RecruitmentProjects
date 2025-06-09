@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "26573681451",
+    "firebase_url": "https://recruitmentchat-a3fde-default-rtdb.firebaseio.com",
+    "project_id": "recruitmentchat-a3fde",
+    "storage_bucket": "recruitmentchat-a3fde.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:26573681451:android:980c387ffcd5314babcb6e",
+        "android_client_info": {
+          "package_name": "com.RecruitmentChat"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCyp8qhn9N1ulsmyeXm42Yp35h6fBgezmk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

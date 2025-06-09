@@ -20,7 +20,8 @@
         "foregroundImage": "./src/assets/icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.anonymous.Recruitment"
     },
     "web": {
       "favicon": "./src/assets/favicon.png"

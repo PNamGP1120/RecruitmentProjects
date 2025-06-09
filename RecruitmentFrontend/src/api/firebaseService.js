@@ -1,6 +1,6 @@
 // src/api/firebaseService.js
 import { ref, push, set, onChildAdded, get, child, update, query, orderByKey } from "firebase/database";
-import { database } from "../firebaseConfig";
+import { database } from "../config/firebase";
 
 // Gửi tin nhắn vào Firebase Realtime Database
 export const sendMessage = (conversationId, senderId, content) => {

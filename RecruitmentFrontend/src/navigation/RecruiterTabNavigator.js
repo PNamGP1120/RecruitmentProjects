@@ -14,7 +14,7 @@ export default function RecruiterTabNavigator() {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
-        headerShown: false,
+        headerShown: false, // Tắt header cho tất cả các tab
         tabBarIcon: ({ focused, color, size }) => {
           let iconName;
           
@@ -46,7 +46,6 @@ export default function RecruiterTabNavigator() {
         component={JobsScreen} 
         options={{ 
           tabBarLabel: 'Việc làm',
-          title: 'Quản lý việc làm'
         }} 
       />
       
@@ -55,7 +54,6 @@ export default function RecruiterTabNavigator() {
         component={RecruitScreen} 
         options={{ 
           tabBarLabel: 'Tuyển dụng',
-          title: 'Quản lý tuyển dụng'
         }} 
       />
       
@@ -64,7 +62,6 @@ export default function RecruiterTabNavigator() {
         component={ConversationsScreen} 
         options={{ 
           tabBarLabel: 'Tin nhắn',
-          title: 'Tin nhắn'
         }} 
       />
       
@@ -73,7 +70,6 @@ export default function RecruiterTabNavigator() {
         component={ProfileScreen} 
         options={{ 
           tabBarLabel: 'Tài khoản',
-          title: 'Thông tin tài khoản'
         }} 
       />
     </Tab.Navigator>
