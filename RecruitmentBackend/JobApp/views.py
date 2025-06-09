@@ -157,9 +157,13 @@ class JobPostingViewSet(viewsets.ModelViewSet):
         """
         user = self.request.user
 
+        # Nếu user chưa đăng nhập, chỉ trả về tin đã duyệt
+        if not user.is_authenticated:
+            return JobPosting.objects.filter(status='Approved')
+
         # Nếu user là admin
-        if user.is_superuser or (user.active_role and user.active_role.name == 'Admin' and user.user_roles.filter(role__name='Admin',
-                                                                                            is_approved=True).exists()):
+        if user.is_superuser or (user.active_role and user.active_role.name == 'Admin' and 
+            user.user_roles.filter(role__name='Admin', is_approved=True).exists()):
             return JobPosting.objects.all()
 
         # Nếu user là recruiter, chỉ xem việc làm của chính họ
@@ -170,7 +174,7 @@ class JobPostingViewSet(viewsets.ModelViewSet):
         elif hasattr(user, 'job_seeker_profile'):
             return JobPosting.objects.filter(status='Approved')
 
-        # Nếu không phải các vai trò trên, trả về rỗng
+        # Nếu không phải các vai trò trên, trả về tin đã duyệt
         return JobPosting.objects.filter(status='Approved')
 
     def perform_create(self, serializer):

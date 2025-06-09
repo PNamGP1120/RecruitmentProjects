@@ -28,25 +28,20 @@ export const apiRequest = async (endpoint, method = 'GET', token = null, body = 
 
     console.log(`API Request: ${method} ${endpoint}`);
 
-    const res = await fetch(`${API_URL}${endpoint}`, {
+    // Thêm xử lý params vào URL
+    let url = `${API_URL}${endpoint}`;
+    if (params) {
+      const queryString = new URLSearchParams(params).toString();
+      url = `${url}?${queryString}`;
+    }
+
+    console.log('Making API request to:', url); // Thêm log để debug
+
+    const res = await fetch(url, {
       method,
       headers,
       body: fetchBody,
     });
-      // Thêm xử lý params vào URL
-      let url = `${API_URL}${endpoint}`;
-      if (params) {
-        const queryString = new URLSearchParams(params).toString();
-        url = `${url}?${queryString}`;
-      }
-
-      console.log('Making API request to:', url); // Thêm log để debug
-
-      const res = await fetch(url, {
-        method,
-        headers,
-        body: fetchBody,
-      });
 
     // Kiểm tra status 204 No Content
     if (res.status === 204) {

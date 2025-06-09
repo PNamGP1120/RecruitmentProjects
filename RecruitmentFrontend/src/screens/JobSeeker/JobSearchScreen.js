@@ -65,7 +65,7 @@ export default function JobSearchScreen({ navigation }) {
       <Ionicons name="search" size={22} color="#bdbdbd" style={{ marginLeft: 10 }} />
       <TextInput
         style={styles.searchInput}
-        placeholder="Search jobs by title, company, or location"
+        placeholder="Job title, company, location"
         placeholderTextColor="#bdbdbd"
         value={searchText}
         onChangeText={setSearchText}

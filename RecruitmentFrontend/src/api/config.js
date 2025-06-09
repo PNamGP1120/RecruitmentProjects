@@ -62,6 +62,8 @@ export const ENDPOINTS = {
     CREATE_APPLICATION: '/applications/',
     APPLICATION_DETAIL: (id) => `/applications/${id}/`,
     APPLICATION_WITHDRAW: (id) => `/applications/${id}/withdraw/`,
+    APPLICATION_ACCEPT_OFFER: (id) => `/applications/${id}/accept_offer/`,
+    APPLICATION_REJECT_OFFER: (id) => `/applications/${id}/reject_offer/`,
 
     RECRUITER: {
         // Hồ sơ nhà tuyển dụng
@@ -127,8 +129,16 @@ export const ENDPOINTS = {
 
         // Activity Logs
         ACTIVITY_LOGS: '/api/admin/activity-logs/',
-    }
+    },
 
+    INTERVIEWS: '/interviews/',
+    INTERVIEW_DETAIL: (id) => `/interviews/${id}/`,
+
+    JOB_SEEKER: {
+        // Xóa các endpoint riêng vì chúng ta sẽ dùng endpoint chung
+        // INTERVIEWS: '/interviews/job-seeker/',
+        // INTERVIEW_DETAIL: (id) => `/interviews/${id}/`,
+    }
 };
 
 export const JOB_TYPES = {

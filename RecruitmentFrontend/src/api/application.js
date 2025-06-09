@@ -24,4 +24,41 @@ export const getApplicationDetail = async (token, id) => {
 
 export const withdrawApplication = async (token, id) => {
   return apiRequest(ENDPOINTS.APPLICATION_WITHDRAW(id), 'POST', token);
+};
+
+/**
+ * Chấp nhận offer từ nhà tuyển dụng
+ * @param {string} token - JWT token
+ * @param {string} applicationId - ID của đơn ứng tuyển
+ * @returns {Promise<Object>} Kết quả chấp nhận offer
+ */
+export const acceptOffer = async (token, applicationId) => {
+    try {
+        const response = await apiRequest(
+            ENDPOINTS.APPLICATION_ACCEPT_OFFER(applicationId), 
+            'POST', 
+            token,
+            { confirm: true }
+        );
+        return response;
+    } catch (error) {
+        console.error('Error in acceptOffer:', error);
+        throw error;
+    }
+};
+
+/**
+ * Từ chối offer từ nhà tuyển dụng
+ * @param {string} token - JWT token
+ * @param {string} applicationId - ID của đơn ứng tuyển
+ * @returns {Promise<Object>} Kết quả từ chối offer
+ */
+export const rejectOffer = async (token, applicationId) => {
+    try {
+        const response = await apiRequest(ENDPOINTS.APPLICATION_REJECT_OFFER(applicationId), 'POST', token);
+        return response;
+    } catch (error) {
+        console.error('Error in rejectOffer:', error);
+        throw error;
+    }
 };  

@@ -37,7 +37,7 @@ class ApplicationViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'], permission_classes=[IsJobSeeker])
     def withdraw(self, request, pk=None):
         application = self.get_object()
-        if application.status != ApplicationStatus.APPLIED:
+        if application.status not in [ApplicationStatus.APPLIED, ApplicationStatus.OFFERED]:
             return Response({'detail': 'Không thể rút hồ sơ khi đã chuyển bước.'}, status=400)
         application.status = ApplicationStatus.WITHDRAWN
         application.save()

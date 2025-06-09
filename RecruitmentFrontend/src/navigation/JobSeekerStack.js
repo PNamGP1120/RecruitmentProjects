@@ -17,6 +17,7 @@ import JobSeekerProfileEditScreen from '../screens/JobSeeker/JobSeekerProfileEdi
 import ApplicationDetailScreen from '../screens/JobSeeker/ApplicationDetailScreen';
 import ChatScreen from '../screens/Common/ChatScreen';
 import ConversationsScreen from '../screens/Common/ConversationsScreen';
+import InterviewScreen from '../screens/JobSeeker/InterviewScreen';
 
 const Stack = createNativeStackNavigator();
 const Drawer = createDrawerNavigator();
@@ -40,6 +41,7 @@ function JobSeekerStackScreens() {
                           options={{title: 'Trạng thái ứng tuyển'}}/>
             <Stack.Screen name="ApplyScreen" component={ApplyScreen} options={{title: 'Ứng tuyển'}}/>
             <Stack.Screen name="ApplicationDetail" component={ApplicationDetailScreen} options={{title: 'Chi tiết ứng tuyển'}}/>
+            <Stack.Screen name="Interview" component={InterviewScreen} options={{title: 'Phỏng vấn'}}/>
             <Stack.Screen name="JobSearch" component={JobSearchScreen}/>
             <Stack.Screen name="ProfileEdit" component={ProfileEditScreen} options={{title: 'Cập nhật hồ sơ'}}/>
             <Stack.Screen name="About" component={AboutScreen} options={{title: 'Về chúng tôi'}}/>
