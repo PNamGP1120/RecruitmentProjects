@@ -7,9 +7,7 @@ import AdminDrawer from './AdminDrawer';
 // Import các screens
 import UserDetail from '../screens/Admin/UserManagement/UserDetail';
 import JobDetail from '../screens/Admin/JobManagement/JobDetail';
-import UserStats from '../screens/Admin/Reports/UserStats';
-import ActivityLogs from '../screens/Admin/Reports/ActivityLogs';
-import Overview from '../screens/Admin/Reports/Overview';
+
 import PendingJobs from '../screens/Admin/JobManagement/PendingJobs';
 import PendingRoles from '../screens/Admin/UserManagement/PendingRoles';
 import Settings from '../screens/Admin/Settings';
@@ -133,63 +131,7 @@ const AdminStack = () => {
       />
 
 
-      {/* Reports */}
-      <Stack.Screen
-        name="Overview"
-        component={Overview}
-        options={{
-          title: 'Tổng quan',
-          headerRight: () => (
-            <MaterialIcons
-              name="date-range"
-              size={24}
-              color="#fff"
-              style={{ marginRight: 16 }}
-              onPress={() => {
-                // Show date range picker
-              }}
-            />
-          ),
-        }}
-      />
-
-      <Stack.Screen
-        name="UserStats"
-        component={UserStats}
-        options={{
-          title: 'Thống kê người dùng',
-          headerRight: () => (
-            <MaterialIcons
-              name="download"
-              size={24}
-              color="#fff"
-              style={{ marginRight: 16 }}
-              onPress={() => {
-                // Export data
-              }}
-            />
-          ),
-        }}
-      />
-
-      <Stack.Screen
-        name="ActivityLogs"
-        component={ActivityLogs}
-        options={{
-          title: 'Lịch sử hoạt động',
-          headerRight: () => (
-            <MaterialIcons
-              name="filter-list"
-              size={24}
-              color="#fff"
-              style={{ marginRight: 16 }}
-              onPress={() => {
-                // Show filter options
-              }}
-            />
-          ),
-        }}
-      />
+     
 
       <Stack.Screen
         name="UserList"
