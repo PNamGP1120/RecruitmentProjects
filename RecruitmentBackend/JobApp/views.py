@@ -128,9 +128,9 @@ class RecruiterProfileViewSet(viewsets.ModelViewSet):
 class JobPostingViewSet(viewsets.ModelViewSet):
     queryset = JobPosting.objects.all()
     serializer_class = JobPostingSerializer
-    lookup_field = 'slug'  # Sử dụng slug thay cho id
+    lookup_field = 'slug'
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['job_type', 'location', 'status']
+    filterset_fields = ['job_type', 'location', 'status', 'salary_min']
     search_fields = ['title', 'description', 'requirements', 'location']
     ordering_fields = ['created_at', 'salary_min', 'views_count']
     ordering = ['-created_at']

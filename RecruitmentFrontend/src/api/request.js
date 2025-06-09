@@ -8,9 +8,10 @@ import { API_URL } from './config';
  * @param {string} method - GET | POST | PUT | PATCH | DELETE
  * @param {string|null} token - JWT token nếu cần
  * @param {object|null} body - Dữ liệu gửi đi (JSON)
+ * @param {object|null} params - Các tham số tìm kiếm và lọc
  * @returns {Promise<any>} - Kết quả trả về từ API
  */
-export const apiRequest = async (endpoint, method = 'GET', token = null, body = null) => {
+export const apiRequest = async (endpoint, method = 'GET', token = null, body = null, params = null) => {
   let headers = {};
   let fetchBody = null;
 
@@ -25,7 +26,16 @@ export const apiRequest = async (endpoint, method = 'GET', token = null, body = 
     headers.Authorization = `Bearer ${token}`;
   }
 
-  const res = await fetch(`${API_URL}${endpoint}`, {
+  // Thêm xử lý params vào URL
+  let url = `${API_URL}${endpoint}`;
+  if (params) {
+    const queryString = new URLSearchParams(params).toString();
+    url = `${url}?${queryString}`;
+  }
+
+  console.log('Making API request to:', url); // Thêm log để debug
+
+  const res = await fetch(url, {
     method,
     headers,
     body: fetchBody,

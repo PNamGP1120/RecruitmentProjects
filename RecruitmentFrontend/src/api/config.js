@@ -1,4 +1,4 @@
-export const API_URL = 'http://192.168.100.222:8000';
+export const API_URL = 'http://192.168.1.200:8000';
 
 export const ENDPOINTS = {
     // Xac thuc, phan quyen
@@ -51,8 +51,11 @@ export const ENDPOINTS = {
     // Jobs
     JOBS: '/jobs/',
     JOB_DETAIL: (slug) => `/jobs/${slug}/`,
+    JOB_TYPES: '/jobs/types/',
+    JOB_STATUSES: '/jobs/statuses/',
     RECRUITER_JOBS: (userId) => `/recruiters/${userId}/jobs/`,
     JOB_STATUS: (id) => `/jobs/${id}/status/`,
+    SEARCH_JOBS: '/jobs/',
 
     //Applications
     MY_APPLICATIONS: '/applications/',
@@ -97,4 +100,18 @@ export const ENDPOINTS = {
         ACTIVITY_LOGS: '/api/admin/activity-logs/',
     }
 
+};
+
+export const JOB_TYPES = {
+    FULL_TIME: 'Full-time',
+    PART_TIME: 'Part-time',
+    FREELANCE: 'Freelance',
+    INTERN: 'Intern'
+};
+
+export const JOB_TYPE_LABELS = {
+    [JOB_TYPES.FULL_TIME]: 'Toàn thời gian',
+    [JOB_TYPES.PART_TIME]: 'Bán thời gian',
+    [JOB_TYPES.FREELANCE]: 'Tự do',
+    [JOB_TYPES.INTERN]: 'Thực tập'
 };

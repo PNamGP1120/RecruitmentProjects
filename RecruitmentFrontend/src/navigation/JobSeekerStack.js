@@ -10,7 +10,6 @@ import ApplicationStatusScreen from '../screens/JobSeeker/ApplicationStatusScree
 import JobSearchScreen from '../screens/JobSeeker/JobSearchScreen';
 import ProfileEditScreen from "../screens/JobSeeker/ProfileEditScreen";
 import AboutScreen from "../screens/JobSeeker/AboutScreen";
-import SearchFilterJobsResultScreen from '../screens/JobSeeker/SearchFilterJobsResultScreen';
 import JobSeekerDrawer from '../components/JobSeekerDrawer';
 import CVPreviewScreen from '../screens/JobSeeker/CVPreviewScreen';
 import CVEditScreen from '../screens/JobSeeker/CVEditScreen';
@@ -42,7 +41,6 @@ function JobSeekerStackScreens() {
             <Stack.Screen name="JobSearch" component={JobSearchScreen}/>
             <Stack.Screen name="ProfileEdit" component={ProfileEditScreen} options={{title: 'Cập nhật hồ sơ'}}/>
             <Stack.Screen name="About" component={AboutScreen} options={{title: 'Về chúng tôi'}}/>
-            <Stack.Screen name="SearchFilterJobsResult" component={SearchFilterJobsResultScreen} options={{ headerShown: false }}/>
             <Stack.Screen name="CVPreview" component={CVPreviewScreen} options={{ title: 'Preview CV' }} />
             <Stack.Screen name="CVEdit" component={CVEditScreen} options={{ title: 'Edit CV' }} />
             <Stack.Screen name="JobSeekerProfileEdit" component={JobSeekerProfileEditScreen} options={{title: 'Chỉnh sửa hồ sơ chi tiết'}}/>

@@ -1,274 +1,346 @@
-import React, { useState, useRef } from 'react';
-import { Modal, View, Animated, TouchableOpacity, Text, StyleSheet, TextInput, Dimensions, ScrollView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  Modal,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+  TextInput,
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import Slider from '@react-native-community/slider';
-import MultiSlider from '@ptomasroos/react-native-multi-slider';
+import { JOB_TYPES, JOB_TYPE_LABELS } from '../../api/config';
 
-const { width } = Dimensions.get('window');
+// Định nghĩa các mức lương theo VND
+const SALARY_RANGES = [
+  { value: 0, label: 'Any' },
+  { value: 5000000, label: '5M VND' },    // 5 triệu
+  { value: 10000000, label: '10M VND' },  // 10 triệu
+  { value: 15000000, label: '15M VND' },  // 15 triệu
+  { value: 20000000, label: '20M VND' },  // 20 triệu
+  { value: 30000000, label: '30M VND' },  // 30 triệu
+  { value: 50000000, label: '50M VND' },  // 50 triệu
+  { value: 100000000, label: '100M VND' }, // 100 triệu
+];
 
-const jobTypes = ['Any', 'Full-Time', 'Contract', 'Part-Time'];
+// Thêm tùy chọn "Tất cả" vào JOB_TYPES
+const ALL_JOB_TYPES = {
+  ALL: 'All',
+  ...JOB_TYPES
+};
 
-const MAX_SALARY = 999999; // Giá trị đại diện cho unlimited
+// Thêm label cho "Tất cả"
+const ALL_JOB_TYPE_LABELS = {
+  [ALL_JOB_TYPES.ALL]: 'Tất cả',
+  ...JOB_TYPE_LABELS
+};
 
-export default function FilterModal({ visible, onClose, slideAnim, onApply }) {
-  const [salaryRange, setSalaryRange] = useState([0, MAX_SALARY]);
-  const [selectedJobType, setSelectedJobType] = useState('Any');
-  const [company, setCompany] = useState('All company');
-  const [location, setLocation] = useState('All location');
-  const [jobFit, setJobFit] = useState(false);
-  const [keyword, setKeyword] = useState('');
+export default function FilterModal({ visible, onClose, onApply, initialFilters }) {
+  const [filters, setFilters] = useState({
+    job_type: ALL_JOB_TYPES.ALL, // Mặc định là "Tất cả"
+    location: '',
+    salary_min: 0,
+  });
 
-  // Tính average
-  let averagePrice;
-  if (salaryRange[1] === MAX_SALARY) {
-    averagePrice = 'Unlimited';
-  } else {
-    averagePrice = `$${Math.round((salaryRange[0] + salaryRange[1]) / 2).toLocaleString()}`;
-  }
+  useEffect(() => {
+    if (visible && initialFilters) {
+      setFilters({
+        job_type: initialFilters.job_type || ALL_JOB_TYPES.ALL,
+        location: initialFilters.location || '',
+        salary_min: initialFilters.salary_min || 0,
+      });
+    }
+  }, [visible, initialFilters]);
+
+  const handleApply = () => {
+    // Nếu chọn "Tất cả", gửi undefined để không lọc theo job_type
+    const appliedFilters = {
+      ...filters,
+      job_type: filters.job_type === ALL_JOB_TYPES.ALL ? undefined : filters.job_type
+    };
+    onApply(appliedFilters);
+  };
+
+  const handleReset = () => {
+    setFilters({
+      job_type: ALL_JOB_TYPES.ALL,
+      location: '',
+      salary_min: 0,
+    });
+  };
+
+  const formatSalary = (value) => {
+    if (value === 0) return 'Any';
+    // Chuyển đổi sang triệu và làm tròn
+    const millionValue = Math.round(value / 1000000);
+    return `${millionValue}M+ VND`;
+  };
+
+  const renderJobTypeFilter = () => (
+    <View style={styles.filterSection}>
+      <Text style={styles.sectionTitle}>Job Type</Text>
+      <View style={styles.jobTypeContainer}>
+        {Object.entries(ALL_JOB_TYPES).map(([key, value]) => (
+          <TouchableOpacity
+            key={key}
+            style={[
+              styles.jobTypeButton,
+              filters.job_type === value && styles.jobTypeButtonActive
+            ]}
+            onPress={() => setFilters(prev => ({ ...prev, job_type: value }))}
+          >
+            <Text style={[
+              styles.jobTypeText,
+              filters.job_type === value && styles.jobTypeTextActive
+            ]}>
+              {ALL_JOB_TYPE_LABELS[value]}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+    </View>
+  );
+
+  const renderLocationFilter = () => (
+    <View style={styles.filterSection}>
+      <Text style={styles.sectionTitle}>Location</Text>
+      <TextInput
+        style={styles.locationInput}
+        placeholder="Enter location"
+        value={filters.location}
+        onChangeText={(text) => setFilters(prev => ({ ...prev, location: text }))}
+      />
+    </View>
+  );
+
+  const renderSalaryFilter = () => (
+    <View style={styles.filterSection}>
+      <Text style={styles.sectionTitle}>Minimum Salary (VND)</Text>
+      <View style={styles.salaryContainer}>
+        <Slider
+          style={styles.slider}
+          minimumValue={0}
+          maximumValue={100000000}
+          step={1000000}
+          value={filters.salary_min}
+          onValueChange={(value) => {
+            // Làm tròn giá trị về triệu
+            const roundedValue = Math.round(value / 1000000) * 1000000;
+            setFilters(prev => ({ ...prev, salary_min: roundedValue }));
+          }}
+          minimumTrackTintColor="#3b82f6"
+          maximumTrackTintColor="#e0e6ed"
+          thumbTintColor="#3b82f6"
+        />
+        <View style={styles.salaryValueContainer}>
+          <Text style={styles.salaryValue}>{formatSalary(filters.salary_min)}</Text>
+        </View>
+        <View style={styles.salaryMarkers}>
+          {SALARY_RANGES.map((range, index) => (
+            <TouchableOpacity
+              key={index}
+              style={[
+                styles.salaryMarker,
+                filters.salary_min === range.value && styles.salaryMarkerActive
+              ]}
+              onPress={() => setFilters(prev => ({ ...prev, salary_min: range.value }))}
+            >
+              <Text style={[
+                styles.salaryMarkerText,
+                filters.salary_min === range.value && styles.salaryMarkerTextActive
+              ]}>
+                {range.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+    </View>
+  );
 
   return (
     <Modal
       visible={visible}
-      transparent
-      animationType="none"
+      animationType="slide"
+      transparent={true}
+      onRequestClose={onClose}
     >
-      <View style={styles.overlay}>
-        <TouchableOpacity style={{ flex: 1 }} onPress={onClose} />
-        <Animated.View
-          style={[
-            styles.modalContainer,
-            { transform: [{ translateY: slideAnim }] },
-          ]}
-        >
-          <View style={styles.headerRow}>
-            <Text style={styles.title}>Filters</Text>
-            <TouchableOpacity onPress={() => {
-              if (onApply) {
-                onApply({
-                  salaryRange,
-                  selectedJobType,
-                  company,
-                  location,
-                  jobFit,
-                  keyword: jobFit ? '' : keyword,
-                });
-              }
-              onClose();
-            }}>
-              <Text style={styles.doneText}>Done</Text>
+      <View style={styles.modalContainer}>
+        <View style={styles.modalContent}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Filter Jobs</Text>
+            <TouchableOpacity onPress={onClose}>
+              <Ionicons name="close" size={24} color="#222" />
             </TouchableOpacity>
           </View>
-          <ScrollView showsVerticalScrollIndicator={false}>
-            {/* Bọc các phần cần làm mờ */}
-            <View style={jobFit ? { opacity: 0.5 } : null} pointerEvents={jobFit ? 'none' : 'auto'}>
-              {/* Search input */}
-              <View style={styles.searchBoxWrapper}>
-                <TextInput
-                  style={styles.searchBox}
-                  placeholder="Add a role or company or type"
-                  placeholderTextColor="#bdbdbd"
-                  editable={!jobFit}
-                  value={keyword}
-                  onChangeText={setKeyword}
-                />
-              </View>
-              {/* Salary Range */}
-              <Text style={styles.label}>Salary Range</Text>
-              <Text style={styles.subLabel}>
-                The average listing price is <Text style={{ fontWeight: 'bold' }}>{averagePrice}</Text>
-              </Text>
-              <View style={{ marginVertical: 10 }}>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 4 }}>
-                  <Text style={styles.salaryValue}>
-                    {salaryRange[0] === 0 ? '$0' : `$${salaryRange[0].toLocaleString()}`}
-                  </Text>
-                  <Text style={styles.salaryValue}>
-                    {salaryRange[1] >= MAX_SALARY ? 'Unlimited' : `$${salaryRange[1].toLocaleString()}`}
-                  </Text>
-                </View>
-                <MultiSlider
-                  values={salaryRange}
-                  min={0}
-                  max={MAX_SALARY}
-                  step={1000}
-                  onValuesChange={values => {
-                    const newValues = [
-                      values[0],
-                      values[1] >= MAX_SALARY - 1000 ? MAX_SALARY : values[1]
-                    ];
-                    setSalaryRange(newValues);
-                  }}
-                  allowOverlap={false}
-                  snapped
-                  markerStyle={{ backgroundColor: '#3b82f6' }}
-                  selectedStyle={{ backgroundColor: '#3b82f6' }}
-                  unselectedStyle={{ backgroundColor: '#e0e6ed' }}
-                  containerStyle={{ alignSelf: 'center'}}
-                  enabledOne={!jobFit}
-                  enabledTwo={!jobFit}
-                />
-              </View>
-              {/* Company & Location */}
-              <View style={styles.selectRow}>
-                <Text style={styles.label}>Company</Text>
-                <TouchableOpacity disabled={jobFit}>
-                  <Text style={styles.selectValue}>{company}</Text>
-                </TouchableOpacity>
-              </View>
-              <View style={styles.selectRow}>
-                <Text style={styles.label}>Location</Text>
-                <TouchableOpacity disabled={jobFit}>
-                  <Text style={styles.selectValue}>{location}</Text>
-                </TouchableOpacity>
-              </View>
-              {/* Job Types */}
-              <Text style={styles.label}>Job Types</Text>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.jobTypeRow}
-                scrollEnabled={!jobFit}
-              >
-                {jobTypes.map(type => (
-                  <TouchableOpacity
-                    key={type}
-                    style={[styles.jobTypeBtn, selectedJobType === type && styles.jobTypeBtnActive]}
-                    onPress={() => setSelectedJobType(type)}
-                    disabled={jobFit}
-                  >
-                    <Text style={[styles.jobTypeText, selectedJobType === type && styles.jobTypeTextActive]}>{type}</Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </View>
-            {/* Job Fit */}
-            <View style={styles.selectRow}>
-              <Text style={styles.label}>Job Fit</Text>
-              <TouchableOpacity onPress={() => setJobFit(!jobFit)} style={styles.checkboxWrapper}>
-                <View style={[styles.checkbox, jobFit && styles.checkboxChecked]} />
-              </TouchableOpacity>
-            </View>
+
+          <ScrollView style={styles.filterContent}>
+            {renderJobTypeFilter()}
+            {renderLocationFilter()}
+            {renderSalaryFilter()}
           </ScrollView>
-        </Animated.View>
+
+          <View style={styles.modalFooter}>
+            <TouchableOpacity
+              style={styles.resetButton}
+              onPress={handleReset}
+            >
+              <Text style={styles.resetButtonText}>Reset</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.applyButton}
+              onPress={handleApply}
+            >
+              <Text style={styles.applyButtonText}>Apply Filters</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
       </View>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.3)',
-    justifyContent: 'flex-end',
-  },
   modalContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    flex: 1,
     backgroundColor: '#fff',
+    marginTop: 50,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    padding: 20,
-    minHeight: 200,
-    maxHeight: '90%',
   },
-  headerRow: {
+  modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 10,
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e6ed',
   },
-  title: {
-    fontWeight: 'bold',
+  modalTitle: {
     fontSize: 20,
-    textAlign: 'center',
-    flex: 1,
-  },
-  doneText: {
-    color: '#007AFF',
-    fontSize: 18,
-    paddingLeft: 16,
-  },
-  searchBoxWrapper: {
-    marginBottom: 18,
-  },
-  searchBox: {
-    backgroundColor: '#f4f4f4',
-    borderRadius: 10,
-    paddingHorizontal: 16,
-    height: 44,
-    fontSize: 16,
+    fontWeight: '600',
     color: '#222',
   },
-  label: {
+  filterContent: {
+    flex: 1,
+    padding: 16,
+  },
+  filterSection: {
+    marginBottom: 24,
+  },
+  sectionTitle: {
     fontSize: 16,
     fontWeight: '600',
-    marginTop: 10,
-    marginBottom: 2,
     color: '#222',
+    marginBottom: 12,
   },
-  subLabel: {
-    color: '#bdbdbd',
-    fontSize: 14,
-    marginBottom: 8,
-  },
-  salaryRow: {
+  jobTypeContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 2,
+    flexWrap: 'wrap',
+    gap: 8,
   },
-  salaryValue: {
-    fontWeight: 'bold',
-    fontSize: 16,
-    color: '#222',
-  },
-  selectRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 10,
-    marginBottom: 2,
-  },
-  selectValue: {
-    color: '#222',
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  jobTypeRow: {
-    flexDirection: 'row',
-    marginTop: 8,
-    marginBottom: 10,
-  },
-  jobTypeBtn: {
-    backgroundColor: '#e0e6ed',
-    borderRadius: 20,
-    paddingHorizontal: 18,
+  jobTypeButton: {
+    paddingHorizontal: 16,
     paddingVertical: 8,
-    marginRight: 10,
+    borderRadius: 20,
+    backgroundColor: '#f3f4f6',
+    borderWidth: 1,
+    borderColor: '#e0e6ed',
   },
-  jobTypeBtnActive: {
+  jobTypeButtonActive: {
     backgroundColor: '#3b82f6',
+    borderColor: '#3b82f6',
   },
   jobTypeText: {
-    color: '#222',
-    fontSize: 15,
-    fontWeight: '500',
+    fontSize: 14,
+    color: '#4b5563',
   },
   jobTypeTextActive: {
     color: '#fff',
   },
-  checkboxWrapper: {
-    width: 24,
-    height: 24,
-    borderRadius: 6,
-    borderWidth: 1.5,
-    borderColor: '#bdbdbd',
+  locationInput: {
+    borderWidth: 1,
+    borderColor: '#e0e6ed',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    color: '#222',
+  },
+  salaryContainer: {
+    paddingHorizontal: 8,
+  },
+  slider: {
+    width: '100%',
+    height: 40,
+  },
+  salaryValueContainer: {
     alignItems: 'center',
-    justifyContent: 'center',
+    marginTop: 8,
+    marginBottom: 16,
   },
-  checkbox: {
-    width: 16,
-    height: 16,
-    borderRadius: 4,
-    backgroundColor: '#fff',
+  salaryValue: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#222',
   },
-  checkboxChecked: {
+  salaryMarkers: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    marginTop: 8,
+  },
+  salaryMarker: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    backgroundColor: '#f3f4f6',
+    marginBottom: 8,
+  },
+  salaryMarkerActive: {
     backgroundColor: '#3b82f6',
   },
-}); 
+  salaryMarkerText: {
+    fontSize: 14,
+    color: '#4b5563',
+  },
+  salaryMarkerTextActive: {
+    color: '#fff',
+    fontWeight: '600',
+  },
+  modalFooter: {
+    flexDirection: 'row',
+    padding: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#e0e6ed',
+    gap: 12,
+  },
+  resetButton: {
+    flex: 1,
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#e0e6ed',
+    alignItems: 'center',
+  },
+  resetButtonText: {
+    fontSize: 16,
+    color: '#4b5563',
+  },
+  applyButton: {
+    flex: 1,
+    padding: 12,
+    borderRadius: 8,
+    backgroundColor: '#3b82f6',
+    alignItems: 'center',
+  },
+  applyButtonText: {
+    fontSize: 16,
+    color: '#fff',
+    fontWeight: '600',
+  },
+});

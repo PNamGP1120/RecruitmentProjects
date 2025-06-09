@@ -1,5 +1,6 @@
 import { apiRequest } from './request';
 import { ENDPOINTS } from './config';
+import { JOB_TYPES, JOB_TYPE_LABELS } from './config';
 
 /**
  * Lấy danh sách tin tuyển dụng
@@ -11,7 +12,28 @@ import { ENDPOINTS } from './config';
  * @returns {Promise<object>} Danh sách tin tuyển dụng
  */
 export const getJobs = async (params = {}) => {
-  return apiRequest(ENDPOINTS.JOBS, 'GET', null, null, params);
+  // Thêm log để debug
+  console.log('Calling getJobs with params:', params);
+  
+  // Đảm bảo các tham số lọc được format đúng
+  const formattedParams = {
+    search: params.search,
+    job_type: params.job_type,
+    location: params.location,
+    // Đảm bảo salary_min là số nguyên
+    salary_min: params.salary_min > 0 ? Math.round(params.salary_min) : undefined,
+    ordering: params.ordering || '-created_at',
+    limit: params.limit,
+    offset: params.offset
+  };
+
+  // Loại bỏ các tham số undefined
+  Object.keys(formattedParams).forEach(key => 
+    formattedParams[key] === undefined && delete formattedParams[key]
+  );
+
+  console.log('Sending request with params:', formattedParams); // Debug log
+  return apiRequest(ENDPOINTS.JOBS, 'GET', null, null, formattedParams);
 };
 
 /**
@@ -188,15 +210,18 @@ export const getJobApplications = async (token, slug) => {
 
 /**
  * Tìm kiếm tin tuyển dụng
- * @param {string} token - JWT access token
  * @param {Object} searchParams - Các tham số tìm kiếm
  * @returns {Promise<Object>} Kết quả tìm kiếm với phân trang
  */
-export const searchJobs = async (token, searchParams = {}) => {
+export const searchJobs = async (searchParams = {}) => {
     try {
-        const queryString = new URLSearchParams(searchParams).toString();
-        const response = await apiRequest(`/jobs/search/?${queryString}`, 'GET', token);
-        return response;
+        // Đảm bảo searchParams có search keyword
+        if (!searchParams.search) {
+            throw new Error('Search keyword is required');
+        }
+        
+        console.log('Searching jobs with params:', searchParams); // Thêm log để debug
+        return getJobs(searchParams);
     } catch (error) {
         console.error('Error in searchJobs:', error);
         throw error;
@@ -215,6 +240,38 @@ export const getJobStatistics = async (token, userId) => {
         return response;
     } catch (error) {
         console.error('Error in getJobStatistics:', error);
+        throw error;
+    }
+};
+
+/**
+ * Lấy danh sách các loại công việc
+ * @returns {Promise<Array>} Danh sách các loại công việc
+ */
+export const getJobTypes = async () => {
+    try {
+        const response = await apiRequest(ENDPOINTS.JOB_TYPES, 'GET');
+        return response;
+    } catch (error) {
+        console.error('Error in getJobTypes:', error);
+        // Trả về danh sách mặc định nếu API call thất bại
+        return Object.entries(JOB_TYPES).map(([key, value]) => ({
+            value: value,
+            label: JOB_TYPE_LABELS[value]
+        }));
+    }
+};
+
+/**
+ * Lấy danh sách các trạng thái công việc
+ * @returns {Promise<Array>} Danh sách các trạng thái công việc
+ */
+export const getJobStatuses = async () => {
+    try {
+        const response = await apiRequest(ENDPOINTS.JOB_STATUSES, 'GET');
+        return response;
+    } catch (error) {
+        console.error('Error in getJobStatuses:', error);
         throw error;
     }
 };
