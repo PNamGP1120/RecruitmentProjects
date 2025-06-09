@@ -14,9 +14,15 @@ export const getJobs = async (params = {}) => {
   return apiRequest(ENDPOINTS.JOBS, 'GET', null, null, params);
 };
 
-export const getJobDetail = async (slug, token = null) => {
-    return apiRequest(ENDPOINTS.JOB_DETAIL(slug), 'GET', token);
-  };
+/**
+ * Lấy chi tiết tin tuyển dụng
+ * @param {string} slug - Slug của tin tuyển dụng
+ * @param {string} token - JWT access token
+ * @returns {Promise<object>} Chi tiết tin tuyển dụng
+ */
+export const getJobDetail = async (slug, token) => {
+  return apiRequest(ENDPOINTS.JOB_DETAIL(slug), 'GET', token);
+};
 
 export const getJobDetails = async (token, slug) => {
     return getJobDetail(slug, token);

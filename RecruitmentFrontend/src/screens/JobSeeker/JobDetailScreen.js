@@ -11,6 +11,7 @@ import {
 import { getJobDetail } from '../../api/job';
 import { LoadingSpinner } from '../../components/LoadingSpinner';
 import { ErrorMessage } from '../../components/ErrorMessage';
+import { useNavigation } from '@react-navigation/native';
 
 const sampleJobs = [
   {
@@ -33,11 +34,12 @@ const sampleJobs = [
   // ...thêm các công việc khác nếu cần
 ];
 
-export default function JobDetailScreen({ route, navigation }) {
+export default function JobDetailScreen({ route }) {
   const { slug } = route.params;
   const [job, setJob] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const navigation = useNavigation();
 
   useEffect(() => {
     fetchJobDetail();
@@ -63,11 +65,6 @@ export default function JobDetailScreen({ route, navigation }) {
   if (error) {
     return <ErrorMessage message={error} onRetry={fetchJobDetail} />;
   }
-
-  const handleApply = () => {
-    Alert.alert('Ứng tuyển', 'Bạn đã ứng tuyển thành công!');
-    // Thực tế: gọi API ứng tuyển tại đây
-  };
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 30 }}>
@@ -109,7 +106,10 @@ export default function JobDetailScreen({ route, navigation }) {
         </View>
       </View>
 
-      <TouchableOpacity style={styles.applyButton} onPress={handleApply}>
+      <TouchableOpacity
+        style={styles.applyButton}
+        onPress={() => navigation.navigate('ApplyScreen', { slug })}
+      >
         <Text style={styles.applyButtonText}>Ứng tuyển ngay</Text>
       </TouchableOpacity>
     </ScrollView>

@@ -12,7 +12,7 @@ class ApplicationSerializer(serializers.ModelSerializer):
     job_seeker = UserSerializer(read_only=True)
     job_posting_detail = JobPostingSerializer(source='job_posting', read_only=True)
     resume_detail = ResumeSerializer(source='resume', read_only=True)
-    
+
     # Giữ lại các trường ID cho việc tạo/cập nhật
     job_posting = serializers.PrimaryKeyRelatedField(queryset=JobPosting.objects.all(), write_only=True)
     resume = serializers.PrimaryKeyRelatedField(queryset=Resume.objects.all(), required=False, allow_null=True, write_only=True)
